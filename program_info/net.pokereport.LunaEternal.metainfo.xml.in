@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <id>@Launcher_AppID@</id>
+  <name>@Launcher_DisplayName@</name>
+  <summary>Launcher oficial del servidor PokeReport: Luna Eternal</summary>
+  <developer id="net.pokereport">
+    <name>PokeReport</name>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <description>
+    <p>
+      Launcher del servidor PokeReport: Luna Eternal. Instala el modpack, se
+      encarga de Java y mantiene todo al día sin que haya que tocar nada.
+    </p>
+    <p>Qué hace:</p>
+    <ul>
+      <li>Instala el modpack completo y solo descarga lo que ha cambiado</li>
+      <li>Trae su propio Java: no hace falta instalar nada aparte</li>
+      <li>Se actualiza solo, y actualiza el pack solo</li>
+      <li>Repara la instalación comprobando la huella de cada fichero</li>
+      <li>Explica por qué se ha cerrado el juego, en vez de dejar un código</li>
+    </ul>
+    <p>
+      Es un fork de Freesm Launcher, que a su vez lo es de Prism Launcher,
+      PolyMC y MultiMC. No está avalado por ninguno de ellos.
+    </p>
+  </description>
+  <launchable type="desktop-id">@Launcher_AppID@.desktop</launchable>
+  <url type="homepage">@Launcher_Git@</url>
+  <url type="bugtracker">@Launcher_Git@/issues</url>
+  <url type="vcs-browser">@Launcher_Git@</url>
+  <categories>
+    <category>Game</category>
+  </categories>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-chat">intense</content_attribute>
+  </content_rating>
+  <releases>
+    <release version="@Launcher_VERSION_NAME@" date="2026-08-17"/>
+  </releases>
+</component>

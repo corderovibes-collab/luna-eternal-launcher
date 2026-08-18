@@ -171,18 +171,33 @@ endif()
 ##################################### Set Application options #####################################
 
 ######## Set URLs ########
-set(Launcher_NEWS_RSS_URL "https://freesmlauncher.org/feed" CACHE STRING "URL to fetch Freesm Launcher's news RSS feed from.")
-set(Launcher_NEWS_OPEN_URL "https://github.com/FreesmTeam/FreesmLauncher/releases" CACHE STRING "URL that gets opened when the user clicks 'More News'")
+set(Launcher_NEWS_RSS_URL "" CACHE STRING "URL to fetch Freesm Launcher's news RSS feed from.")
+set(Launcher_NEWS_OPEN_URL "https://github.com/corderovibes-collab/luna-eternal-launcher/releases" CACHE STRING "URL that gets opened when the user clicks 'More News'")
 set(Launcher_WIKI_URL "https://prismlauncher.org/wiki/" CACHE STRING "URL that gets opened when the user clicks 'Launcher Help'")
 set(Launcher_HELP_URL "https://prismlauncher.org/wiki/help-pages/%1" CACHE STRING "URL (with arg %1 to be substituted with page-id) that gets opened when the user requests help in a dialog window")
 set(Launcher_LOGIN_CALLBACK_URL "https://freesmlauncher.org/successful-login" CACHE STRING "URL that gets opened when the user successfully logins.")
 set(Launcher_LEGACY_FMLLIBS_BASE_URL "https://files.prismlauncher.org/fmllibs/" CACHE STRING "URL for legacy (<=1.5.2) FML Libraries.")
 
 ######## Set version numbers ########
-set(Launcher_VERSION_MAJOR 2)
-set(Launcher_VERSION_MINOR 2)
-set(Launcher_VERSION_PATCH 2)
-set(Launcher_VERSION_CODENAME "Maple")
+#
+# ⚠ LA VERSION EMPIEZA DE CERO, NO SE HEREDA LA DE FREESM.
+#
+# Venia 2.2.2 con nombre en clave "Maple", que son SUYOS. Dos motivos para
+# cambiarlo, y el segundo no es cosmetico:
+#
+#   1. "Maple" es identidad de Freesm y sale en la ventana de Acerca de.
+#   2. EL AUTOACTUALIZADOR COMPARA VERSIONES contra NUESTRAS releases.
+#      Arrancando en 2.2.2, la primera que publicaramos --0.1.0, 1.0.0, la
+#      que fuera-- seria MENOR que la instalada, y a nadie le llegaria nunca
+#      una actualizacion. El fallo no daria ningun error: simplemente no
+#      pasaria nada, para siempre.
+#
+# 0.x a proposito: todavia no hay modo quiosco, ni perfiles, ni diagnostico,
+# ni traduccion. Decir 1.0 seria mentir sobre lo que hay.
+set(Launcher_VERSION_MAJOR 0)
+set(Launcher_VERSION_MINOR 1)
+set(Launcher_VERSION_PATCH 0)
+set(Launcher_VERSION_CODENAME "Ciudadela")
 
 set(Launcher_VERSION_NAME "${Launcher_VERSION_MAJOR}.${Launcher_VERSION_MINOR}.${Launcher_VERSION_PATCH}")
 set(Launcher_VERSION_NAME4 "${Launcher_VERSION_MAJOR}.${Launcher_VERSION_MINOR}.${Launcher_VERSION_PATCH}.0")
@@ -192,12 +207,29 @@ set(Launcher_VERSION_NAME4_COMMA "${Launcher_VERSION_MAJOR},${Launcher_VERSION_M
 set(Launcher_BUILD_PLATFORM "unknown" CACHE STRING "A short string identifying the platform that this build was built for. Only used to display in the about dialog.")
 
 # Github repo URL with releases for updater
-set(Launcher_UPDATER_GITHUB_REPO "https://github.com/FreesmTeam/FreesmLauncher" CACHE STRING "Base github URL for the updater.")
+set(Launcher_UPDATER_GITHUB_REPO "https://github.com/corderovibes-collab/luna-eternal-launcher" CACHE STRING "Base github URL for the updater.")
 
 # Name to help updater identify valid artifacts
 set(Launcher_BUILD_ARTIFACT "" CACHE STRING "Artifact name to help the updater identify valid artifacts.")
 
 # The metadata server
+# ⚠⚠ ESTO SIGUE APUNTANDO A UN SERVIDOR DE OTROS, Y ES UNA DECISION PENDIENTE.
+#
+# De aqui salen los metadatos de Minecraft, Fabric y LWJGL: sin esta URL el
+# launcher no sabe que descargar, asi que CADA jugador nuestro depende de una
+# maquina que no controlamos y cuyos duenos no nos deben nada.
+#
+# No se cambia en el mismo paso que la marca a proposito: es una dependencia
+# FUNCIONAL, no cosmetica, y merece su prueba.
+#
+#   meta.freesmlauncher.org   16 paquetes
+#   meta.prismlauncher.org    13  <- los 13 son EXACTAMENTE los mismos
+#
+# Los 3 de diferencia son inyeccion de auth alternativa (`by.ely.authlib`,
+# `moe.yushi.authlibinjector`, `org.unmojang.loki`), que nosotros NO usamos:
+# vamos con cuentas offline puras contra EasyAuth. O sea que Prism sirve, y lo
+# que de verdad toca algun dia es levantar el nuestro -- el generador es libre
+# (github.com/PrismLauncher/meta) y es la mejor idea que tiene Prism.
 set(Launcher_META_URL "https://meta.freesmlauncher.org/v1/" CACHE STRING "URL to fetch Launcher's meta files from.")
 
 # Imgur API Client ID
@@ -207,20 +239,20 @@ set(Launcher_IMGUR_CLIENT_ID "5b97b0713fba4a3" CACHE STRING "Client ID you can g
 set(Launcher_DISCORD_CLIENT_ID "1378362128125263882" CACHE STRING "Discord application ID")
 
 # Bug tracker URL
-set(Launcher_BUG_TRACKER_URL "https://github.com/FreesmTeam/FreesmLauncher/issues" CACHE STRING "URL for the bug tracker.")
+set(Launcher_BUG_TRACKER_URL "https://github.com/corderovibes-collab/luna-eternal-launcher/issues" CACHE STRING "URL for the bug tracker.")
 
 # Translations Platform URL
-set(Launcher_TRANSLATIONS_URL "https://hosted.weblate.org/projects/freesmlauncher/freesmlauncher-launcher/" CACHE STRING "URL for the translations platform.")
+set(Launcher_TRANSLATIONS_URL "" CACHE STRING "URL for the translations platform.")
 set(Launcher_TRANSLATION_FILES_URL "https://i18n.prismlauncher.org/" CACHE STRING "URL for the translations files.")
 
 # Telegram Space
-set(Launcher_TELEGRAM_URL "https://freesmlauncher.org/telegram" CACHE STRING "URL to the Telegram Chat")
+set(Launcher_TELEGRAM_URL "" CACHE STRING "URL to the Telegram Chat")
 
 # Discord URL
-set(Launcher_DISCORD_URL "https://freesmlauncher.org/discord" CACHE STRING "URL for the Discord guild.")
+set(Launcher_DISCORD_URL "" CACHE STRING "URL for the Discord guild.")
 
 # Subreddit URL
-set(Launcher_SUBREDDIT_URL "https://freesmlauncher.org/reddit" CACHE STRING "URL for the subreddit.")
+set(Launcher_SUBREDDIT_URL "" CACHE STRING "URL for the subreddit.")
 
 # Builds
 set(Launcher_QT_VERSION_MAJOR "6" CACHE STRING "Major Qt version to build against")
@@ -348,7 +380,7 @@ include(ECMQtDeclareLoggingCategory)
 
 ####################################### Program Info #######################################
 
-set(Launcher_APP_BINARY_NAME "freesmlauncher" CACHE STRING "Name of the Launcher binary")
+set(Launcher_APP_BINARY_NAME "lunaeternal" CACHE STRING "Name of the Launcher binary")
 add_subdirectory(program_info)
 
 ####################################### Install layout #######################################
@@ -383,7 +415,7 @@ if(UNIX AND APPLE)
     set(MACOSX_BUNDLE_ICON_FILE ${Launcher_Name}.icns)
     set(MACOSX_BUNDLE_COPYRIGHT "${Launcher_Copyright_Mac}")
     set(MACOSX_SPARKLE_UPDATE_PUBLIC_KEY "v55ZWWD6QlPoXGV6VLzOTZxZUggWeE51X8cRQyQh6vA=" CACHE STRING "Public key for Sparkle update feed")
-    set(MACOSX_SPARKLE_UPDATE_FEED_URL "https://freesmlauncher.org/feed/appcast" CACHE STRING "URL for Sparkle update feed")
+    set(MACOSX_SPARKLE_UPDATE_FEED_URL "" CACHE STRING "URL for Sparkle update feed")
 
     set(MACOSX_SPARKLE_DOWNLOAD_URL "https://github.com/sparkle-project/Sparkle/releases/download/2.8.0/Sparkle-2.8.0.tar.xz" CACHE STRING "URL to Sparkle release archive")
     set(MACOSX_SPARKLE_SHA256 "fd5681ee92bf238aaac2d08214ceaf0cc8976e452d7f882d80bac1e61581f3b1" CACHE STRING "SHA256 checksum for Sparkle release archive")
