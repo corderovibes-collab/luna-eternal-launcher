@@ -5,6 +5,14 @@ project(application)
 ######## Sources and headers ########
 
 set(CORE_SOURCES
+    # LUNA ETERNAL - lo propio de este servidor.
+    #
+    # Va en CORE_SOURCES y no en un modulo aparte a proposito: las pruebas
+    # enlazan contra `Launcher_logic`, y lo que decide que se instala en la
+    # maquina de un jugador tiene que poder probarse.
+    luna/LunaManifest.h
+    luna/LunaManifest.cpp
+
     # LOGIC - Base classes and infrastructure
     BaseInstaller.h
     BaseInstaller.cpp
