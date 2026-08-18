@@ -12,6 +12,8 @@ set(CORE_SOURCES
     # maquina de un jugador tiene que poder probarse.
     luna/LunaManifest.h
     luna/LunaManifest.cpp
+    luna/LunaInstance.h
+    luna/LunaInstance.cpp
 
     # LOGIC - Base classes and infrastructure
     BaseInstaller.h
