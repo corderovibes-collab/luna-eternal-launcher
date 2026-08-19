@@ -88,6 +88,15 @@ class MainWindow : public QMainWindow {
     QMenu* createPopupMenu() override;
 
    private slots:
+    /**
+     * Deja la instancia seleccionada igual que el manifiesto de Luna Eternal.
+     *
+     * Es el primer punto donde el motor de `launcher/luna/` se ejecuta de
+     * verdad. De momento vive en un menu; cuando exista el modo quiosco sera
+     * lo que haga el boton de Jugar antes de arrancar el juego.
+     */
+    void onActualizarPackLuna();
+
     void onCatToggled(bool);
 
     void onCatChanged(int);
@@ -248,6 +257,9 @@ class MainWindow : public QMainWindow {
     unique_qobject_ptr<NewsChecker> m_newsChecker;
 
     BaseInstance* m_selectedInstance = nullptr;
+
+    /** Creada por codigo: no toca el .ui, asi no choca con merges de upstream. */
+    QAction* m_accionActualizarLuna = nullptr;
     QString m_currentInstIcon;
 
     // managed by the application object

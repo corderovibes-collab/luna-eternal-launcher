@@ -43,6 +43,9 @@
 #include "FileSystem.h"
 
 #include "MainWindow.h"
+
+#include "luna/LunaConfig.h"
+#include "luna/LunaUpdate.h"
 #include "ui_MainWindow.h"
 
 #include <QDir>
@@ -200,6 +203,17 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         helpMenuButton = dynamic_cast<QToolButton*>(ui->mainToolBar->widgetForAction(ui->actionHelpButton));
         ui->actionHelpButton->setMenu(new QMenu(this));
         ui->actionHelpButton->menu()->addActions(ui->helpMenu->actions());
+
+        // ⚠ LA ACCION SE CREA POR CODIGO Y NO EN EL .ui A PROPOSITO.
+        //
+        // `MainWindow.ui` es de upstream y se toca en cada version suya. Cada
+        // widget que le añadamos es un conflicto garantizado al traer sus
+        // arreglos con `git merge upstream/develop`. Creandola aqui, el .ui
+        // sigue siendo suyo byte a byte.
+        m_accionActualizarLuna = new QAction(tr("Actualizar el pack de Luna Eternal"), this);
+        connect(m_accionActualizarLuna, &QAction::triggered, this, &MainWindow::onActualizarPackLuna);
+        ui->fileMenu->addSeparator();
+        ui->fileMenu->addAction(m_accionActualizarLuna);
         ui->actionHelpButton->menu()->removeAction(ui->actionCheckUpdate);
         helpMenuButton->setPopupMode(QToolButton::InstantPopup);
 
@@ -846,6 +860,22 @@ void MainWindow::setCatBackground(bool enabled)
 {
     view->setPaintCat(enabled);
     view->viewport()->repaint();
+}
+
+void MainWindow::onActualizarPackLuna()
+{
+    if (!m_selectedInstance) {
+        QMessageBox::information(this, tr("Luna Eternal"),
+                                 tr("Elige antes la instancia que quieres poner al dia."));
+        return;
+    }
+
+    // El perfil manda que se instala: el de constructor añade Axiom y
+    // WorldEdit CUI, que son ~46 MB que un jugador normal no usa jamas.
+    // Todavia no hay donde elegirlo, asi que se usa el de por defecto.
+    unique_qobject_ptr<Task> tarea(new Luna::UpdateTask(m_selectedInstance->gameRoot(), Luna::defaultProfile(),
+                                                        Luna::Mode::Normal));
+    runModalTask(tarea.get());
 }
 
 void MainWindow::runModalTask(Task* task)
