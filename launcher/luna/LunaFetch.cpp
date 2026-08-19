@@ -75,16 +75,17 @@ void FetchManifestTask::pedir(const QStringList& urls, bool esPuntero)
     m_previo = m_sub;  // que no muera dentro de su propia señal
     m_sub = grupo;
 
-    // ⚠⚠ EL SIGUIENTE PASO SE APLAZA AL BUCLE DE EVENTOS, Y NO ES UN ADORNO.
+    // ⚠⚠ `recibido()` ENCADENA OTRA PETICION, Y ESO REASIGNA `m_sub`.
     //
-    // `recibido()` vuelve a llamar a `pedir()`, que reasigna `m_sub`. Si eso
-    // ocurriera aqui dentro, se estaria DESTRUYENDO LA TAREA MIENTRAS SE
-    // EJECUTA SU PROPIO MANEJADOR: uso despues de liberar, y el launcher se
-    // cierra entero sin dialogo ni mensaje.
+    // Si el anterior se destruyera ahi, se estaria liberando la tarea DESDE
+    // DENTRO de su propio manejador: uso despues de liberar, y el launcher se
+    // cierra entero sin dialogo ni mensaje. Por eso `m_previo` lo mantiene
+    // vivo (ver la cabecera).
     //
-    // Paso de verdad: el registro se cortaba justo al lanzar la descarga y la
-    // ventana desaparecia. `Qt::QueuedConnection` deja que la señal termine de
-    // emitirse antes de tocar nada.
+    // ⚠ EL PRIMER INTENTO FUE `Qt::QueuedConnection`, Y ROMPIO LA CADENA.
+    //   El dialogo modal se cierra en cuanto la tarea de arriba termina, y el
+    //   paso aplazado no llegaba a correr: la descarga del manifiesto NO SE
+    //   LANZABA NUNCA, y `UpdateTask` reportaba exito habiendo hecho nada.
     connect(grupo.get(), &Task::succeeded, this, [this, esPuntero] { recibido(esPuntero); });
     connect(grupo.get(), &Task::failed, this, [this, esPuntero](QString motivo) {  // NOLINT
         // Si el PUNTERO no contesta, queda el manifiesto entero en `raw`. Es el

@@ -97,6 +97,9 @@ class MainWindow : public QMainWindow {
      */
     void onActualizarPackLuna();
 
+    /** Cambia entre jugador y constructor, e instala o desinstala en consecuencia. */
+    void onCambiarPerfilLuna(bool constructor);
+
     /** Pone el pack al dia y solo entonces arranca. Ver el .cpp. */
     void lanzarPoniendoAlDia(BaseInstance* instance);
 
@@ -263,6 +266,7 @@ class MainWindow : public QMainWindow {
 
     /** Creada por codigo: no toca el .ui, asi no choca con merges de upstream. */
     QAction* m_accionActualizarLuna = nullptr;
+    QAction* m_accionPerfilConstructor = nullptr;
     QString m_currentInstIcon;
 
     // managed by the application object

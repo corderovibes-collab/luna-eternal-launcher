@@ -19,6 +19,9 @@
 
 #include "luna/LunaConfig.h"
 
+#include "Application.h"
+#include "settings/SettingsObject.h"
+
 namespace Luna {
 
 namespace {
@@ -49,6 +52,31 @@ QString defaultProfile()
 QStringList profiles()
 {
     return { QStringLiteral("jugador"), QStringLiteral("constructor") };
+}
+
+namespace {
+const auto kAjuste = QStringLiteral("LunaProfile");
+}
+
+QString currentProfile()
+{
+    const auto guardado = APPLICATION->settings()->get(kAjuste).toString();
+    // Un valor que no reconocemos --ajuste editado a mano, o de una version
+    // futura-- se trata como jugador. Nunca como constructor: dar herramientas
+    // de construccion por accidente es peor que no darlas.
+    return profiles().contains(guardado) ? guardado : defaultProfile();
+}
+
+void setCurrentProfile(const QString& profile)
+{
+    if (!profiles().contains(profile))
+        return;
+    APPLICATION->settings()->set(kAjuste, profile);
+}
+
+bool isBuilder(const QString& profile)
+{
+    return profile == QStringLiteral("constructor");
 }
 
 }  // namespace Luna

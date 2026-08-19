@@ -658,6 +658,10 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         bool isWinter = now.month() >= 12 || now.month() <= 2;
 
         // Theming
+        // Perfil de Luna Eternal. `jugador` por defecto: quien construye sabe
+        // que construye, quien juega no tiene por que enterarse de que existe
+        // la otra opcion.
+        m_settings->registerSetting("LunaProfile", QString("jugador"));
         m_settings->registerSetting("IconTheme", QString("fluent_dark"));
         m_settings->registerSetting("ApplicationTheme", QString("freesm"));
         m_settings->registerSetting("BackgroundCat", QString("typescript"));

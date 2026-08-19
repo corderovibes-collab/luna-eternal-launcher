@@ -225,6 +225,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         ui->fileMenu->addAction(m_accionActualizarLuna);
         ui->mainToolBar->addAction(m_accionActualizarLuna);
 
+        // Perfil de constructor: añade Axiom y WorldEdit CUI (~46 MB) que un
+        // jugador normal no usa jamas. Va como interruptor y no como lista
+        // porque solo hay dos opciones y una es la normal.
+        m_accionPerfilConstructor = new QAction(tr("Soy constructor"), this);
+        m_accionPerfilConstructor->setCheckable(true);
+        m_accionPerfilConstructor->setChecked(Luna::isBuilder(Luna::currentProfile()));
+        m_accionPerfilConstructor->setToolTip(
+            tr("Añade Axiom y WorldEdit CUI. Necesitas ademas permiso en el servidor."));
+        connect(m_accionPerfilConstructor, &QAction::toggled, this, &MainWindow::onCambiarPerfilLuna);
+        ui->fileMenu->addAction(m_accionPerfilConstructor);
+        ui->mainToolBar->addAction(m_accionPerfilConstructor);
+
         // ------------------------------------------------------ MODO QUIOSCO
         //
         // Prism es un GESTOR MULTI-INSTANCIA: sirve para alguien que administra
@@ -977,7 +989,7 @@ void MainWindow::onActualizarPackLuna()
     // WorldEdit CUI, que son ~46 MB que un jugador normal no usa jamas.
     // Todavia no hay donde elegirlo, asi que se usa el de por defecto.
     unique_qobject_ptr<Task> tarea(
-        new Luna::UpdateTask(inst->gameRoot(), Luna::defaultProfile(), Luna::Mode::Normal));
+        new Luna::UpdateTask(inst->gameRoot(), Luna::currentProfile(), Luna::Mode::Normal));
     runModalTask(tarea.get());
 }
 
@@ -1744,13 +1756,30 @@ void MainWindow::instanceActivated(QModelIndex index)
  * --paso el 2026-08-19 con `exported_slots`--. Un mensaje claro aqui vale mas
  * que un fallo incomprensible dentro del juego.
  */
+void MainWindow::onCambiarPerfilLuna(bool constructor)
+{
+    const auto perfil = constructor ? QStringLiteral("constructor") : Luna::defaultProfile();
+    Luna::setCurrentProfile(perfil);
+
+    // ⚠ NO SE SINCRONIZA AQUI, Y ES DELIBERADO.
+    //
+    // Cambiar de perfil instala o desinstala ~46 MB. Hacerlo en cuanto se
+    // marca la casilla significaria empezar una descarga que el jugador no ha
+    // pedido, quiza mientras esta haciendo otra cosa. Se aplica en el
+    // siguiente Jugar, que es cuando de verdad importa que el pack este bien.
+    QMessageBox::information(
+        this, tr("Luna Eternal"),
+        constructor ? tr("Perfil de constructor activado. Las herramientas se instalan la proxima vez que juegues.")
+                    : tr("Perfil de jugador activado. Las herramientas de construccion se quitan la proxima vez que juegues."));
+}
+
 void MainWindow::lanzarPoniendoAlDia(BaseInstance* instance)
 {
     if (!instance || instance->isRunning())
         return;
 
     unique_qobject_ptr<Task> puesta(
-        new Luna::UpdateTask(instance->gameRoot(), Luna::defaultProfile(), Luna::Mode::Normal));
+        new Luna::UpdateTask(instance->gameRoot(), Luna::currentProfile(), Luna::Mode::Normal));
 
     bool ok = false;
     connect(puesta.get(), &Task::succeeded, this, [&ok] { ok = true; });

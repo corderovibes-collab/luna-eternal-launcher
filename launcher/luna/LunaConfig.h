@@ -54,4 +54,18 @@ QString fallbackManifestUrl();
 QString defaultProfile();
 QStringList profiles();
 
+/**
+ * El perfil elegido, guardado en los ajustes del launcher.
+ *
+ * ⚠ CAMBIAR DE PERFIL INSTALA O DESINSTALA, no solo marca una casilla. El
+ *   planificador retira lo que ya no toca, asi que pasar de constructor a
+ *   jugador quita Axiom de verdad. Sin eso, quien probara el perfil de
+ *   constructor una vez se quedaba sus 46 MB para siempre.
+ */
+QString currentProfile();
+void setCurrentProfile(const QString& profile);
+
+/** ¿Este perfil da acceso a las herramientas de construccion? */
+bool isBuilder(const QString& profile);
+
 }  // namespace Luna
