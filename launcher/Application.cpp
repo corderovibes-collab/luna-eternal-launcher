@@ -1996,6 +1996,20 @@ bool Application::handleDataMigration(const QString& currentData,
                                       const QString& name,
                                       const QString& configFile) const
 {
+    // ⚠ MODO QUIOSCO: NO SE OFRECE MIGRAR DATOS DE OTROS LAUNCHERS.
+    //
+    // Un jugador de Luna Eternal no tiene por que saber que existe Prism, ni
+    // decidir si quiere traerse sus instancias. La pregunta sale ANTES de la
+    // ventana principal, en ingles, y quien no sepa que contestar puede acabar
+    // arrastrando modpacks ajenos a su instalacion.
+    //
+    // Y aunque conteste bien, no gana nada: aqui hay UNA instancia y la crea el
+    // propio launcher desde el manifiesto.
+    //
+    // Se corta aqui y no en cada sitio que llama, para que no se escape ninguna
+    // de las variantes (Prism, PolyMC, MultiMC, Freesm).
+    return false;
+
     QString nomigratePath = FS::PathCombine(currentData, name + "_nomigrate.txt");
     QStringList configPaths = { FS::PathCombine(oldData, configFile), FS::PathCombine(oldData, BuildConfig.LAUNCHER_CONFIGFILE) };
 
