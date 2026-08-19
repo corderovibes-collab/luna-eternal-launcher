@@ -207,7 +207,18 @@ set(Launcher_VERSION_NAME4_COMMA "${Launcher_VERSION_MAJOR},${Launcher_VERSION_M
 set(Launcher_BUILD_PLATFORM "unknown" CACHE STRING "A short string identifying the platform that this build was built for. Only used to display in the about dialog.")
 
 # Github repo URL with releases for updater
-set(Launcher_UPDATER_GITHUB_REPO "https://github.com/corderovibes-collab/luna-eternal-launcher" CACHE STRING "Base github URL for the updater.")
+# ⚠ VACIO A PROPOSITO HASTA QUE EXISTA EL REPOSITORIO (tarea GPL-001).
+#
+# El actualizador se enciende solo si esta variable tiene valor. Con una URL que
+# apunta a un repositorio que aun no existe, cada arranque pregunta por sus
+# releases, GitHub contesta 404 y al jugador le salta un dialogo de error --
+# antes incluso de ver la ventana.
+#
+# Vacia, `UPDATER_ENABLED` queda en false y no se comprueba nada. El dia que se
+# cree el repositorio publico, se restaura esta linea:
+#
+#   set(Launcher_UPDATER_GITHUB_REPO "https://github.com/corderovibes-collab/luna-eternal-launcher" ...)
+set(Launcher_UPDATER_GITHUB_REPO "" CACHE STRING "Base github URL for the updater.")
 
 # Name to help updater identify valid artifacts
 set(Launcher_BUILD_ARTIFACT "" CACHE STRING "Artifact name to help the updater identify valid artifacts.")
