@@ -97,6 +97,9 @@ class MainWindow : public QMainWindow {
      */
     void onActualizarPackLuna();
 
+    /** Pone el pack al dia y solo entonces arranca. Ver el .cpp. */
+    void lanzarPoniendoAlDia(BaseInstance* instance);
+
     void onCatToggled(bool);
 
     void onCatChanged(int);

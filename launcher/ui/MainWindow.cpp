@@ -1729,16 +1729,53 @@ void MainWindow::instanceActivated(QModelIndex index)
     activateInstance(inst);
 }
 
+/**
+ * Pone el pack al dia y SOLO ENTONCES arranca.
+ *
+ * Es el corazon del modo quiosco: el jugador pulsa Jugar y no tiene que
+ * acordarse de actualizar nada. Un launcher que deja entrar con el pack viejo
+ * es un launcher que deja a alguien fuera del servidor a mitad de partida.
+ *
+ * ⚠ SI LA SINCRONIZACION FALLA, NO SE ARRANCA.
+ *
+ * Es deliberado y va contra el instinto de "que al menos pueda jugar". Con el
+ * pack a medias el juego arranca y se cae al conectar, o peor: entra con mods
+ * que el servidor no tiene y lo echan con un error que no nombra la causa
+ * --paso el 2026-08-19 con `exported_slots`--. Un mensaje claro aqui vale mas
+ * que un fallo incomprensible dentro del juego.
+ */
+void MainWindow::lanzarPoniendoAlDia(BaseInstance* instance)
+{
+    if (!instance || instance->isRunning())
+        return;
+
+    unique_qobject_ptr<Task> puesta(
+        new Luna::UpdateTask(instance->gameRoot(), Luna::defaultProfile(), Luna::Mode::Normal));
+
+    bool ok = false;
+    connect(puesta.get(), &Task::succeeded, this, [&ok] { ok = true; });
+    runModalTask(puesta.get());
+
+    if (!ok) {
+        QMessageBox::warning(this, tr("Luna Eternal"),
+                             tr("No se pudo poner el pack al dia, asi que no se arranca el juego.")
+                                 + QString(QChar(0x0A)) + QString(QChar(0x0A))
+                                 + tr("Con el pack a medias el servidor te echaria con un error que no "
+                                      "explica nada. Revisa tu conexion y vuelve a darle a Jugar."));
+        return;
+    }
+
+    APPLICATION->launch(instance);
+}
+
 void MainWindow::on_actionLaunchInstance_triggered()
 {
-    if (m_selectedInstance && !m_selectedInstance->isRunning()) {
-        APPLICATION->launch(m_selectedInstance);
-    }
+    lanzarPoniendoAlDia(m_selectedInstance);
 }
 
 void MainWindow::activateInstance(BaseInstance* instance)
 {
-    APPLICATION->launch(instance);
+    lanzarPoniendoAlDia(instance);
 }
 
 void MainWindow::on_actionKillInstance_triggered()
