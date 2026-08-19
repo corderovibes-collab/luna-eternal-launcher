@@ -143,11 +143,23 @@ void UpdateTask::descargar()
                                     ? QDir(m_instanceRoot).absoluteFilePath(
                                           QStringLiteral(".luna-cache/%1.zip").arg(f.file.sha1))
                                     : resolveInInstance(m_instanceRoot, f.file.path);
-        if (destino.isEmpty())
-            continue;  // ruta insegura: el planificador ya la habia filtrado
-
-        if (auto t = makeFileTask(f.file, destino))
-            grupo->addTask(t);
+        // ⚠⚠ AQUI NO SE SALTA NADA EN SILENCIO, Y ES IMPORTANTE.
+        //
+        // Si un fichero del plan no se puede programar --ruta insegura, o
+        // ningun origen utilizable-- y se ignorara, al terminar se guardaria
+        // `nextState` ANOTANDOLO COMO INSTALADO. El arranque siguiente se
+        // fiaria del atajo y no lo volveria a intentar NUNCA: el jugador se
+        // queda sin ese mod y el launcher cree que lo tiene.
+        //
+        // Es exactamente el fallo contra el que avisa la cabecera de este
+        // fichero, colandose por la puerta de al lado. Mejor parar con un
+        // motivo claro que dejar una instalacion que miente.
+        auto t = destino.isEmpty() ? nullptr : makeFileTask(f.file, destino);
+        if (!t) {
+            emitFailed(tr("No se puede descargar %1: el manifiesto no trae un origen valido.").arg(f.file.path));
+            return;
+        }
+        grupo->addTask(t);
     }
 
     m_sub = grupo;
