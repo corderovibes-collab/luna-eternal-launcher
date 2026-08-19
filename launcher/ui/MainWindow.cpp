@@ -233,11 +233,31 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         // ⚠ Y NO SE OCULTA `actionEditInstance`: desde ahi se llega a los
         //   registros y a las carpetas del juego, que es lo primero que hace
         //   falta cuando alguien reporta un fallo.
-        for (auto* sobra : { ui->actionAddInstance, ui->actionCopyInstance, ui->actionDeleteInstance,
-                             ui->actionExportInstance, ui->actionCreateInstanceShortcut, ui->actionChangeInstGroup,
-                             ui->actionRenameInstance, ui->actionUndoTrashInstance }) {
+        const QList<QAction*> sobran = { ui->actionAddInstance,     ui->actionCopyInstance,
+                                         ui->actionDeleteInstance,  ui->actionExportInstance,
+                                         ui->actionCreateInstanceShortcut, ui->actionChangeInstGroup,
+                                         ui->actionRenameInstance,  ui->actionUndoTrashInstance };
+        for (auto* sobra : sobran) {
             if (sobra)
                 sobra->setVisible(false);
+        }
+
+        // ⚠ CON `setVisible(false)` NO BASTA PARA LA BARRA DE LA DERECHA.
+        //
+        // `instanceToolBar` es un `WideBar`, que RESTAURA SU PROPIA VISIBILIDAD
+        // desde los ajustes del jugador (`setVisibilityState`, unas lineas mas
+        // arriba). O sea que guarda por su cuenta que cada boton estaba visible
+        // y lo vuelve a mostrar, pisando lo que acabamos de decir.
+        //
+        // Se comprobo en vivo: la barra de arriba si perdio "Añadir instancia",
+        // y la derecha seguia con Copiar, Borrar y Exportar.
+        //
+        // `removeAction()` lo saca de la barra sin destruir la accion, asi que
+        // `setInstanceActionsEnabled()` --que las toca por nombre-- sigue
+        // funcionando sin tocarla.
+        for (auto* sobra : sobran) {
+            if (sobra)
+                ui->instanceToolBar->removeAction(sobra);
         }
         ui->actionHelpButton->menu()->removeAction(ui->actionCheckUpdate);
         helpMenuButton->setPopupMode(QToolButton::InstantPopup);
