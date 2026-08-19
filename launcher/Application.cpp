@@ -1256,6 +1256,31 @@ bool Application::createSetupWizard()
     }();
     bool askjava = BuildConfig.JAVA_DOWNLOADER_ENABLED && !javaRequired && !settings()->get("AutomaticJavaDownload").toBool() &&
                    !settings()->get("AutomaticJavaSwitch").toBool() && !settings()->get("UserAskedAboutAutomaticJavaDownload").toBool();
+    // ------------------------------------------------------- MODO QUIOSCO
+    //
+    // Un jugador de Luna Eternal NO tiene que configurar nada al abrir el
+    // launcher: ni elegir idioma, ni decidir sobre Java, ni pedirle una clave a
+    // CurseForge. Todo eso lo decide el servidor.
+    //
+    // Se ponen los valores buenos DE UNA VEZ y las paginas dejan de hacer
+    // falta. No se borran del codigo: si algun dia hace falta una, se quita de
+    // aqui y vuelve sola.
+    if (settings()->get("Language").toString().isEmpty()) {
+        // 99,8 % traducido, frente al 80,8 % del de Latinoamerica: ese 19 %
+        // restante saldria en ingles mezclado por toda la interfaz.
+        settings()->set("Language", QStringLiteral("es_ES"));
+    }
+    // Que se lo descargue solo: pedirle a un jugador que instale un JDK es
+    // exactamente lo que este launcher existe para evitar.
+    settings()->set("AutomaticJavaDownload", true);
+    settings()->set("AutomaticJavaSwitch", true);
+    settings()->set("UserAskedAboutAutomaticJavaDownload", true);
+    settings()->set("IgnoreJavaWizard", true);
+    // ⚠ NO se pide la clave de CurseForge. Su propio texto avisa de que puede
+    //   incumplir sus terminos de servicio, y no hace falta: el pack sale de
+    //   NUESTRO manifiesto, no de CurseForge.
+    settings()->set("FlameKeyShouldBeFetchedOnStartup", false);
+
     bool languageRequired = settings()->get("Language").toString().isEmpty();
     bool pasteInterventionRequired = settings()->get("PastebinURL") != "";
     bool validWidgets = m_themeManager->isValidApplicationTheme(settings()->get("ApplicationTheme").toString());
