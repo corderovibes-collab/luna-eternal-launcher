@@ -69,6 +69,15 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
    public:
+
+    /**
+     * Pide el nombre si el jugador aun no tiene cuenta.
+     *
+     * Publico porque lo llama `Application` con la ventana ya visible: sin
+     * cuenta no se puede jugar, y en Prism hay que ir a buscarla a un menu que
+     * un jugador nuevo no sabe que existe.
+     */
+    void pedirNombreSiHaceFalta();
     explicit MainWindow(QWidget* parent = 0);
     ~MainWindow();
 
@@ -87,6 +96,7 @@ class MainWindow : public QMainWindow {
    protected:
     QMenu* createPopupMenu() override;
 
+
    private slots:
     /**
      * Deja la instancia seleccionada igual que el manifiesto de Luna Eternal.
@@ -99,6 +109,8 @@ class MainWindow : public QMainWindow {
 
     /** Cambia entre jugador y constructor, e instala o desinstala en consecuencia. */
     void onCambiarPerfilLuna(bool constructor);
+
+
 
     /** Pone el pack al dia y solo entonces arranca. Ver el .cpp. */
     void lanzarPoniendoAlDia(BaseInstance* instance);

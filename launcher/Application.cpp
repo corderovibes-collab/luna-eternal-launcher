@@ -1235,6 +1235,15 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
     }
 
     m_themeManager->applyCurrentlySelectedTheme(true);
+    // ⚠ LA CUENTA SE PIDE CON LA VENTANA YA VISIBLE.
+    //
+    // Sin cuenta no se puede jugar, y en Prism hay que ir a buscarla a un menu
+    // que un jugador nuevo no sabe que existe. Se pregunta aqui, una sola vez,
+    // y con la ventana delante para que el dialogo no aparezca flotando solo
+    // sobre el escritorio.
+    if (m_mainWindow)
+        m_mainWindow->pedirNombreSiHaceFalta();
+
     performMainStartupAction();
 }
 

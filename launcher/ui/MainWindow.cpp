@@ -44,6 +44,11 @@
 
 #include "MainWindow.h"
 
+#include <QInputDialog>
+#include <QRegularExpression>
+
+#include "minecraft/auth/AccountList.h"
+#include "minecraft/auth/MinecraftAccount.h"
 #include "luna/LunaConfig.h"
 #include "luna/LunaFetch.h"
 #include "luna/LunaInstance.h"
@@ -1756,6 +1761,55 @@ void MainWindow::instanceActivated(QModelIndex index)
  * --paso el 2026-08-19 con `exported_slots`--. Un mensaje claro aqui vale mas
  * que un fallo incomprensible dentro del juego.
  */
+void MainWindow::pedirNombreSiHaceFalta()
+{
+    auto* cuentas = APPLICATION->accounts();
+    if (!cuentas || cuentas->count() > 0)
+        return;
+
+    // ⚠ EL NOMBRE ES LA IDENTIDAD, NO UN APODO.
+    //
+    // Con el servidor en `online-mode=false`, el UUID se calcula a partir del
+    // nombre. Cambiarlo mas tarde equivale a empezar de cero: otro UUID, otro
+    // jugador, inventario y Pokemon perdidos. Por eso se avisa aqui y no en
+    // ningun sitio donde se pueda pasar por alto.
+    const QRegularExpression valido(QStringLiteral("^[A-Za-z0-9_]{3,16}$"));
+    // Se construye por codigo: un salto escrito como escape se pierde al pasar
+    // por generadores y plantillas, y parte el literal en dos lineas.
+    const QString salto(QChar(0x0A));
+
+    while (true) {
+        bool aceptado = false;
+        const QString nombre =
+            QInputDialog::getText(this, tr("Bienvenido a Luna Eternal"),
+                                  tr("¿Con que nombre quieres jugar?") + salto + salto
+                                      + tr("Tu progreso queda atado a este nombre: si lo cambias mas "
+                                           "adelante, empiezas de cero.") + salto
+                                      + tr("Entre 3 y 16 caracteres, solo letras, numeros y guion bajo."),
+                                  QLineEdit::Normal, QString(), &aceptado)
+                .trimmed();
+
+        if (!aceptado)
+            return;  // ya lo creara desde el menu de cuentas si prefiere
+
+        if (!valido.match(nombre).hasMatch()) {
+            QMessageBox::warning(this, tr("Luna Eternal"),
+                                 tr("Ese nombre no vale. Entre 3 y 16 caracteres, "
+                                    "solo letras, numeros y guion bajo."));
+            continue;
+        }
+
+        auto cuenta = MinecraftAccount::createOffline(nombre);
+        if (!cuenta) {
+            QMessageBox::warning(this, tr("Luna Eternal"), tr("No se pudo crear la cuenta."));
+            return;
+        }
+        cuentas->addAccount(cuenta);
+        cuentas->setDefaultAccount(cuenta);
+        return;
+    }
+}
+
 void MainWindow::onCambiarPerfilLuna(bool constructor)
 {
     const auto perfil = constructor ? QStringLiteral("constructor") : Luna::defaultProfile();
