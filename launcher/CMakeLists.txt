@@ -16,6 +16,8 @@ set(CORE_SOURCES
     luna/LunaInstance.cpp
     luna/LunaSync.h
     luna/LunaSync.cpp
+    luna/LunaDownload.h
+    luna/LunaDownload.cpp
 
     # LOGIC - Base classes and infrastructure
     BaseInstaller.h
