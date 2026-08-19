@@ -131,6 +131,22 @@ Plan computePlan(const Manifest& manifest, const State& installed, const QString
         if (!plan.nextState.contains(it.key()) && isManaged(it.key()) && isSafeRelativePath(it.key()))
             plan.toRemove.append(it.key());
     }
+
+    // ⚠⚠ Y ADEMAS SE BARRE `mods/` DE VERDAD. Ver `DiskProbe::modJars()`.
+    //
+    // Solo `mods/`: es 100 % del pack. `config/`, `resourcepacks/` y
+    // `shaderpacks/` llevan cosas del jugador, y ahi no se toca nada que no
+    // estuviera anotado.
+    //
+    // Consecuencia asumida: un mod que el jugador añada a mano desaparece en la
+    // siguiente actualizacion. Es lo correcto aqui -- la regla del proyecto es
+    // que el servidor tiene que ser SUBCONJUNTO del cliente, y un mod extra que
+    // registre algo sincronizado es justo lo que echa a la gente.
+    for (const auto& rel : disk.modJars()) {
+        if (!plan.nextState.contains(rel) && !plan.toRemove.contains(rel) && isSafeRelativePath(rel))
+            plan.toRemove.append(rel);
+    }
+
     plan.toRemove.sort();
 
     for (const auto& f : plan.toFetch)

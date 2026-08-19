@@ -59,6 +59,24 @@ class DiskProbe {
     virtual qint64 size(const QString& relPath) const = 0;
     /** Caro: solo se llama en `Mode::Repair`. */
     virtual QString sha1(const QString& relPath) const = 0;
+
+    /**
+     * Los `.jar` que hay DE VERDAD en `mods/`, como rutas relativas.
+     *
+     * ⚠ HACE FALTA PORQUE EL ESTADO GUARDADO NO BASTA.
+     *
+     * La limpieza que solo mira `installed.json` alcanza lo que el launcher
+     * recuerda haber puesto. Un jar que llego por otra via --una instalacion
+     * anterior, o una version que aun no lo apuntaba-- sobrevive a TODAS las
+     * actualizaciones, para siempre.
+     *
+     * Eso dejo a jugadores fuera del servidor el 2026-08-19: arrastraban
+     * `trinkets` y `accessories-compat-layer` de un pack anterior, y ese puente
+     * mandaba unas ranuras que el servidor no sabia leer. Al dueño no le pasaba
+     * --su instalacion estaba bien anotada-- asi que parecia cosa de maquinas
+     * concretas.
+     */
+    virtual QStringList modJars() const = 0;
 };
 
 /** Un fichero que hay que traer. */

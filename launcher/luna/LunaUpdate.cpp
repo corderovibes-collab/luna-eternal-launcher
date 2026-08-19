@@ -54,6 +54,17 @@ class RealDisk final : public DiskProbe {
         return QString::fromLatin1(h.result().toHex());
     }
 
+    QStringList modJars() const override
+    {
+        QStringList out;
+        QDir mods(QDir(m_root).absoluteFilePath(QStringLiteral("mods")));
+        if (!mods.exists())
+            return out;  // instalacion desde cero
+        for (const auto& n : mods.entryList({ QStringLiteral("*.jar") }, QDir::Files))
+            out << QStringLiteral("mods/%1").arg(n);
+        return out;
+    }
+
    private:
     QString abs(const QString& rel) const { return resolveInInstance(m_root, rel); }
     QString m_root;

@@ -47,9 +47,12 @@ class FakeDisk final : public Luna::DiskProbe {
         hashes[p] = h;
     }
 
+    QStringList jars;  ///< lo que hay DE VERDAD en mods/
+
     bool exists(const QString& p) const override { return sizes.contains(p); }
     qint64 size(const QString& p) const override { return sizes.value(p, -1); }
     QString sha1(const QString& p) const override { return hashes.value(p); }
+    QStringList modJars() const override { return jars; }
 };
 
 QStringList rutas(const Luna::Plan& p)
@@ -178,6 +181,37 @@ class LunaSyncTest : public QObject {
         auto plan = Luna::computePlan(Luna::parseManifest(manifiesto()), estado, QStringLiteral("jugador"), Luna::Mode::Normal,
                                       disco);
         QCOMPARE(plan.toRemove, QStringList({ QStringLiteral("mods/axiom.jar") }));
+    }
+
+    void test_unJarHUERFANOenModsSeRetira()
+    {
+        // ⚠ ESTA PRUEBA FIJA EL FALLO QUE DEJO A JUGADORES FUERA EL 2026-08-19.
+        //
+        // Arrastraban `trinkets` y `accessories-compat-layer` de un pack
+        // anterior. El servidor ya no los tenia, y ese puente le mandaba unas
+        // ranuras que no sabia leer:
+        //
+        //     Failed to decode packet 'clientbound/minecraft:custom_payload'
+        //     Caused by: StructFieldException: [Field: exported_slots]
+        //
+        // La limpieza solo miraba el estado guardado, asi que un jar que llego
+        // por otra via sobrevivia a TODAS las actualizaciones. Al dueño no le
+        // pasaba --su instalacion estaba bien anotada-- y por eso parecia cosa
+        // de maquinas concretas en vez de un hueco del launcher.
+        FakeDisk disco;
+        disco.jars = { QStringLiteral("mods/cobblemon.jar"), QStringLiteral("mods/trinkets-3.10.0.jar") };
+        disco.put(QStringLiteral("mods/cobblemon.jar"), 100, QStringLiteral("aaa"));
+        disco.put(QStringLiteral("servers.dat"), 40, QStringLiteral("ddd"));
+
+        // El estado NO menciona al huerfano: es justo el caso.
+        Luna::State estado{ { QStringLiteral("mods/cobblemon.jar"), QStringLiteral("aaa") },
+                            { QStringLiteral("config"), QStringLiteral("ccc") },
+                            { QStringLiteral("servers.dat"), QStringLiteral("ddd") } };
+
+        auto plan = Luna::computePlan(Luna::parseManifest(manifiesto()), estado, QStringLiteral("jugador"),
+                                      Luna::Mode::Normal, disco);
+        QVERIFY(plan.toRemove.contains(QStringLiteral("mods/trinkets-3.10.0.jar")));
+        QVERIFY(!plan.toRemove.contains(QStringLiteral("mods/cobblemon.jar")));
     }
 
     void test_soloSeBorraDentroDeLoQueAdministramos()
