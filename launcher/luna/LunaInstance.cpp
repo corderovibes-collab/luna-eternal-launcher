@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include "InstanceList.h"
 #include "minecraft/VanillaInstanceCreationTask.h"
 
 namespace Luna {
@@ -70,6 +71,18 @@ InstanceTask* makeCreationTask(const Manifest& manifest)
     // sitio.
     task->setGroup(QString());
     return task;
+}
+
+BaseInstance* findInstance(InstanceList* list)
+{
+    if (!list)
+        return nullptr;
+    for (int i = 0; i < list->count(); ++i) {
+        auto* inst = list->at(i);
+        if (inst && inst->name() == instanceName())
+            return inst;
+    }
+    return nullptr;
 }
 
 }  // namespace Luna

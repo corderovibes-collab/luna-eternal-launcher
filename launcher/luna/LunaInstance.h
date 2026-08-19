@@ -25,6 +25,8 @@
 #include "luna/LunaManifest.h"
 
 class InstanceTask;
+class InstanceList;
+class BaseInstance;
 
 namespace Luna {
 
@@ -83,8 +85,22 @@ Versions versionsFor(const Manifest& manifest);
  * Tarea que crea la instancia del servidor. `nullptr` si el manifiesto no
  * trae version de Minecraft.
  *
- * No comprueba si ya existe: de eso se encarga quien la llama.
+ * No comprueba si ya existe: de eso se encarga `findInstance()`.
  */
 InstanceTask* makeCreationTask(const Manifest& manifest);
+
+/**
+ * LA instancia del servidor, o `nullptr` si todavia no existe.
+ *
+ * Se busca POR NOMBRE y no se guarda su identificador en los ajustes. Un
+ * identificador guardado se queda apuntando a la nada en cuanto alguien borra
+ * la instancia desde el gestor, y entonces el launcher no la encuentra Y
+ * tampoco la crea, porque cree que ya existe. Buscar por nombre siempre dice la
+ * verdad de lo que hay.
+ *
+ * Cuando exista el modo quiosco no habra gestor y esto sera una formalidad;
+ * mientras tanto, el jugador puede tener otras instancias al lado.
+ */
+BaseInstance* findInstance(InstanceList* list);
 
 }  // namespace Luna

@@ -45,6 +45,8 @@
 #include "MainWindow.h"
 
 #include "luna/LunaConfig.h"
+#include "luna/LunaFetch.h"
+#include "luna/LunaInstance.h"
 #include "luna/LunaUpdate.h"
 #include "ui_MainWindow.h"
 
@@ -864,17 +866,39 @@ void MainWindow::setCatBackground(bool enabled)
 
 void MainWindow::onActualizarPackLuna()
 {
-    if (!m_selectedInstance) {
-        QMessageBox::information(this, tr("Luna Eternal"),
-                                 tr("Elige antes la instancia que quieres poner al dia."));
+    // HAY UNA INSTANCIA Y ES LA NUESTRA. Si no existe, se crea y se sale: el
+    // jugador vuelve a pulsar y ya se actualiza.
+    //
+    // Se hace en dos pasos a proposito. Crear una instancia es una tarea
+    // asincrona que puede fallar --sin red no hay metadatos de Minecraft-- y
+    // encadenarle la sincronizacion detras significaria que un fallo a mitad
+    // deja una instancia a medio crear Y un pack a medio bajar, sin saber cual
+    // de las dos cosas hay que rehacer.
+    auto* inst = Luna::findInstance(APPLICATION->instances());
+    if (!inst) {
+        // Las versiones salen del manifiesto, nunca escritas a mano. Hay que
+        // traerlo antes de poder crear nada.
+        auto fetch = makeShared<Luna::FetchManifestTask>();
+        runModalTask(fetch.get());
+        if (!fetch->manifest().isValid()) {
+            QMessageBox::warning(this, tr("Luna Eternal"),
+                                 tr("No se pudo comprobar el pack. Revisa tu conexion y vuelve a intentarlo."));
+            return;
+        }
+        auto* crear = Luna::makeCreationTask(fetch->manifest());
+        if (!crear) {
+            QMessageBox::warning(this, tr("Luna Eternal"), tr("El manifiesto no dice que version de Minecraft usar."));
+            return;
+        }
+        instanceFromInstanceTask(crear);
         return;
     }
 
     // El perfil manda que se instala: el de constructor añade Axiom y
     // WorldEdit CUI, que son ~46 MB que un jugador normal no usa jamas.
     // Todavia no hay donde elegirlo, asi que se usa el de por defecto.
-    unique_qobject_ptr<Task> tarea(new Luna::UpdateTask(m_selectedInstance->gameRoot(), Luna::defaultProfile(),
-                                                        Luna::Mode::Normal));
+    unique_qobject_ptr<Task> tarea(
+        new Luna::UpdateTask(inst->gameRoot(), Luna::defaultProfile(), Luna::Mode::Normal));
     runModalTask(tarea.get());
 }
 
