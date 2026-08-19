@@ -66,6 +66,18 @@ class FetchManifestTask : public Task {
     Task::Ptr m_sub;
 
     /**
+     * La tarea del paso anterior, viva hasta que termine el siguiente.
+     *
+     * ⚠ `recibido()` encadena otra peticion, y eso reasigna `m_sub`. Si el
+     *   anterior se destruyera ahi, se estaria liberando la tarea DESDE DENTRO
+     *   de su propio manejador. Guardarlo aqui lo mantiene vivo sin tener que
+     *   aplazar nada al bucle de eventos -- que fue el primer intento y rompio
+     *   la cadena: el dialogo modal se cerraba antes de que corriera el paso
+     *   aplazado, y la descarga del manifiesto no llegaba a lanzarse NUNCA.
+     */
+    Task::Ptr m_previo;
+
+    /**
      * Un buffer POR ORIGEN.
      *
      * ⚠ `MultipleOptionsTask` prueba los origenes en secuencia hasta que uno

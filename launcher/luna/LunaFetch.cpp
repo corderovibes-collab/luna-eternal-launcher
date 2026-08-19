@@ -72,6 +72,7 @@ void FetchManifestTask::pedir(const QStringList& urls, bool esPuntero)
     }
     // El buffer pertenece al Download, que vive dentro del grupo. Solo se puede
     // leer mientras el grupo siga vivo -- por eso se copia en cuanto llega.
+    m_previo = m_sub;  // que no muera dentro de su propia señal
     m_sub = grupo;
 
     // ⚠⚠ EL SIGUIENTE PASO SE APLAZA AL BUCLE DE EVENTOS, Y NO ES UN ADORNO.
@@ -84,8 +85,7 @@ void FetchManifestTask::pedir(const QStringList& urls, bool esPuntero)
     // Paso de verdad: el registro se cortaba justo al lanzar la descarga y la
     // ventana desaparecia. `Qt::QueuedConnection` deja que la señal termine de
     // emitirse antes de tocar nada.
-    connect(grupo.get(), &Task::succeeded, this, [this, esPuntero] { recibido(esPuntero); },
-            Qt::QueuedConnection);
+    connect(grupo.get(), &Task::succeeded, this, [this, esPuntero] { recibido(esPuntero); });
     connect(grupo.get(), &Task::failed, this, [this, esPuntero](QString motivo) {  // NOLINT
         // Si el PUNTERO no contesta, queda el manifiesto entero en `raw`. Es el
         // camino de los launchers viejos: mas lento y con cache, pero mejor que
@@ -97,7 +97,7 @@ void FetchManifestTask::pedir(const QStringList& urls, bool esPuntero)
             return;
         }
         emitFailed(motivo);
-    }, Qt::QueuedConnection);
+    });
 
     grupo->start();
 }

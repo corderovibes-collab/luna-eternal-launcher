@@ -97,6 +97,21 @@ void UpdateTask::executeTask()
     m_sub = fetch;
     connect(fetch.get(), &Task::succeeded, this, [this, fetch] {
         m_manifest = fetch->manifest();
+        // ⚠⚠ SIN ESTO, UN MANIFIESTO VACIO BORRA EL PACK ENTERO.
+        //
+        // `computePlan` con un manifiesto sin ficheros produce un plan sin nada
+        // que bajar y CON TODOS LOS MODS COMO HUERFANOS, porque ninguno aparece
+        // ya en lo esperado. El barrido los retiraria y la tarea diria que todo
+        // fue bien.
+        //
+        // Estuvo a punto de pasar: la cadena del puntero se rompio, el
+        // manifiesto llego vacio y `UpdateTask` reporto exito habiendo hecho
+        // nada. Se salvo de milagro porque la instancia estaba recien creada y
+        // no habia nada que borrar.
+        if (!m_manifest.isValid()) {
+            emitFailed(tr("No se pudo leer la lista del pack. No se toca nada."));
+            return;
+        }
         conElManifiesto();
     });
     connect(fetch.get(), &Task::failed, this, [this](QString m) { emitFailed(m); });
@@ -120,6 +135,19 @@ void UpdateTask::conElManifiesto()
 
     const RealDisk disco(m_instanceRoot);
     m_plan = computePlan(m_manifest, instalado, m_profile, m_mode, disco);
+
+    // ⚠ GUARDA: si el plan quiere retirar TODO y no bajar nada, algo esta mal.
+    //
+    // Un manifiesto correcto nunca deja la instancia vacia. Si el plan dice eso
+    // es que llego a medias, y borrar es la unica accion de esta tarea que NO
+    // se puede deshacer: lo bajado se vuelve a bajar, lo borrado hay que
+    // volver a bajarlo tambien, pero mientras tanto el jugador no puede jugar.
+    if (m_plan.toFetch.isEmpty() && m_plan.toRemove.size() > 10) {
+        emitFailed(tr("El pack pide retirar %1 ficheros y no instalar ninguno. "
+                      "Eso no puede estar bien, asi que no se toca nada.")
+                       .arg(m_plan.toRemove.size()));
+        return;
+    }
 
     // Paso 4: BORRAR ANTES DE DESCARGAR. Ver el porque en la cabecera.
     m_removed = removeEntries(m_instanceRoot, m_plan.toRemove);
