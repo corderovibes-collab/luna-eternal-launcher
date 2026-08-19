@@ -216,6 +216,29 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(m_accionActualizarLuna, &QAction::triggered, this, &MainWindow::onActualizarPackLuna);
         ui->fileMenu->addSeparator();
         ui->fileMenu->addAction(m_accionActualizarLuna);
+
+        // ------------------------------------------------------ MODO QUIOSCO
+        //
+        // Prism es un GESTOR MULTI-INSTANCIA: sirve para alguien que administra
+        // varios modpacks. Aqui hay UN servidor y una instancia, asi que todo
+        // lo que ofrezca crear, copiar, exportar o borrar instancias no lleva a
+        // ningun sitio util -- y lo que si hace es dejar al jugador romperse su
+        // propia instalacion sin querer.
+        //
+        // ⚠ SE OCULTAN, NO SE BORRAN. Quitarlas del .ui seria tocar un fichero
+        //   de upstream que ellos cambian en cada version, y cada linea que
+        //   toquemos ahi es un conflicto al traer sus arreglos de seguridad.
+        //   `setVisible(false)` cuesta una linea y no deja huella en su codigo.
+        //
+        // ⚠ Y NO SE OCULTA `actionEditInstance`: desde ahi se llega a los
+        //   registros y a las carpetas del juego, que es lo primero que hace
+        //   falta cuando alguien reporta un fallo.
+        for (auto* sobra : { ui->actionAddInstance, ui->actionCopyInstance, ui->actionDeleteInstance,
+                             ui->actionExportInstance, ui->actionCreateInstanceShortcut, ui->actionChangeInstGroup,
+                             ui->actionRenameInstance, ui->actionUndoTrashInstance }) {
+            if (sobra)
+                sobra->setVisible(false);
+        }
         ui->actionHelpButton->menu()->removeAction(ui->actionCheckUpdate);
         helpMenuButton->setPopupMode(QToolButton::InstantPopup);
 
