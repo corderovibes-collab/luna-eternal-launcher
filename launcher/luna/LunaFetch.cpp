@@ -22,6 +22,7 @@
 #include <QUrl>
 
 #include "luna/LunaConfig.h"
+#include "Application.h"
 #include "net/Download.h"
 #include "tasks/MultipleOptionsTask.h"
 
@@ -52,20 +53,40 @@ void FetchManifestTask::pedir(const QStringList& urls, bool esPuntero)
     // Un solo origen tambien pasa por aqui: asi el camino es el mismo con y sin
     // espejos, y no hay dos formas distintas de fallar.
     auto grupo = makeShared<MultipleOptionsTask>(tr("Manifiesto"));
-    QByteArray* ultimo = nullptr;
+    m_buffers.clear();
     for (const auto& u : urls) {
         auto [dl, buf] = Net::Download::makeByteArray(QUrl(u));
+        // ⚠⚠ SIN ESTO LA DESCARGA REVIENTA AL ARRANCAR, NO AL RECIBIR.
+        //
+        // `Net::Download` guarda un puntero al gestor de red y lo usa en cuanto
+        // empieza. Quien se lo pasa es `NetJob`, y SOLO `NetJob`. Metiendo las
+        // descargas en un `MultipleOptionsTask` --que es un `ConcurrentTask`,
+        // no un `NetJob`-- nadie se lo asigna y se llama sobre un nulo.
+        //
+        // Paso de verdad: el launcher se cerraba entero al pulsar el boton, y
+        // el registro se cortaba justo en "Running <url>", que parecia un
+        // problema de red cuando era un puntero sin asignar.
+        dl->setNetwork(APPLICATION->network());
         grupo->addTask(dl);
-        ultimo = buf;
+        m_buffers << buf;  // uno por origen: ver la cabecera
     }
-    // ⚠ El buffer pertenece al Download, que vive dentro del grupo. Solo se
-    //   puede leer mientras `m_sub` siga vivo -- por eso se copia en cuanto
-    //   llega y no se guarda el puntero mas alla.
-    m_buffer = ultimo;
+    // El buffer pertenece al Download, que vive dentro del grupo. Solo se puede
+    // leer mientras el grupo siga vivo -- por eso se copia en cuanto llega.
     m_sub = grupo;
 
-    connect(grupo.get(), &Task::succeeded, this, [this, esPuntero] { recibido(esPuntero); });
-    connect(grupo.get(), &Task::failed, this, [this, esPuntero](QString motivo) {
+    // ⚠⚠ EL SIGUIENTE PASO SE APLAZA AL BUCLE DE EVENTOS, Y NO ES UN ADORNO.
+    //
+    // `recibido()` vuelve a llamar a `pedir()`, que reasigna `m_sub`. Si eso
+    // ocurriera aqui dentro, se estaria DESTRUYENDO LA TAREA MIENTRAS SE
+    // EJECUTA SU PROPIO MANEJADOR: uso despues de liberar, y el launcher se
+    // cierra entero sin dialogo ni mensaje.
+    //
+    // Paso de verdad: el registro se cortaba justo al lanzar la descarga y la
+    // ventana desaparecia. `Qt::QueuedConnection` deja que la señal termine de
+    // emitirse antes de tocar nada.
+    connect(grupo.get(), &Task::succeeded, this, [this, esPuntero] { recibido(esPuntero); },
+            Qt::QueuedConnection);
+    connect(grupo.get(), &Task::failed, this, [this, esPuntero](QString motivo) {  // NOLINT
         // Si el PUNTERO no contesta, queda el manifiesto entero en `raw`. Es el
         // camino de los launchers viejos: mas lento y con cache, pero mejor que
         // dejar al jugador sin pack.
@@ -76,18 +97,25 @@ void FetchManifestTask::pedir(const QStringList& urls, bool esPuntero)
             return;
         }
         emitFailed(motivo);
-    });
+    }, Qt::QueuedConnection);
 
     grupo->start();
 }
 
 void FetchManifestTask::recibido(bool esPuntero)
 {
-    if (!m_buffer) {
+    // El primero que traiga algo es el del origen que funciono.
+    QByteArray crudo;
+    for (auto* b : m_buffers) {
+        if (b && !b->isEmpty()) {
+            crudo = *b;  // copia: el original muere con el grupo
+            break;
+        }
+    }
+    if (crudo.isEmpty()) {
         emitFailed(tr("La descarga no dejo contenido."));
         return;
     }
-    const QByteArray crudo = *m_buffer;  // copia: ver el aviso en `pedir`
     QString error;
 
     if (esPuntero && looksLikePointer(crudo)) {

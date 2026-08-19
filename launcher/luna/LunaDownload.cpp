@@ -23,6 +23,7 @@
 #include <QUrl>
 
 #include "luna/LunaSync.h"
+#include "Application.h"
 #include "net/ChecksumValidator.h"
 #include "net/Download.h"
 #include "tasks/MultipleOptionsTask.h"
@@ -75,6 +76,10 @@ Task::Ptr makeFileTask(const File& file, const QString& destPath)
 
     for (const auto& url : origins) {
         auto dl = Net::Download::makeFile(QUrl(url), destPath);
+        // ⚠ Mismo motivo que en LunaFetch: solo `NetJob` asigna el gestor de
+        //   red, y esto no es un `NetJob`. Sin esta linea, la descarga usa un
+        //   puntero nulo en cuanto arranca.
+        dl->setNetwork(APPLICATION->network());
 
         // ⚠ EL VALIDADOR VA EN CADA ORIGEN, NO UNA VEZ AL FINAL.
         //   Si un espejo sirve un fichero corrupto, esa opcion falla y se pasa

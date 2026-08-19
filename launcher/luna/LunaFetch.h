@@ -64,7 +64,16 @@ class FetchManifestTask : public Task {
     Pointer m_pointer;
 
     Task::Ptr m_sub;
-    QByteArray* m_buffer = nullptr;
+
+    /**
+     * Un buffer POR ORIGEN.
+     *
+     * ⚠ `MultipleOptionsTask` prueba los origenes en secuencia hasta que uno
+     *   funciona, asi que el que se llena es el DEL QUE FUNCIONA, no el ultimo
+     *   que se añadio. Guardando solo uno, un espejo que respondiera despues
+     *   del primario dejaba el contenido en otro sitio y aqui llegaba vacio.
+     */
+    QList<QByteArray*> m_buffers;
     bool m_yaCaiAlRespaldo = false;
 };
 
