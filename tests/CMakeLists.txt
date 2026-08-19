@@ -18,6 +18,9 @@ ecm_add_test(LunaDownload_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_
 ecm_add_test(LunaApply_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_MAJOR}::Test
     TEST_NAME LunaApply)
 
+ecm_add_test(LunaConfig_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_MAJOR}::Test
+    TEST_NAME LunaConfig)
+
 ecm_add_test(GZip_test.cpp LINK_LIBRARIES Launcher_logic Qt${QT_VERSION_MAJOR}::Test
     TEST_NAME GZip)
 
