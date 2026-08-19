@@ -214,8 +214,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         // sigue siendo suyo byte a byte.
         m_accionActualizarLuna = new QAction(tr("Actualizar el pack de Luna Eternal"), this);
         connect(m_accionActualizarLuna, &QAction::triggered, this, &MainWindow::onActualizarPackLuna);
+        // ⚠ AL MENU ARCHIVO NO BASTA: PRISM NO LO ENSEÑA.
+        //   Su disposicion por defecto es una barra de herramientas, no una
+        //   barra de menus, asi que una accion que solo viva en `fileMenu` es
+        //   INALCANZABLE. Se vio abriendo el launcher, no leyendo el codigo.
+        //   Va a los dos sitios: al menu por si alguien activa la barra de
+        //   menus, y a la barra por defecto, que es donde se ve.
+        m_accionActualizarLuna->setIcon(QIcon::fromTheme(QStringLiteral("checkupdate")));
         ui->fileMenu->addSeparator();
         ui->fileMenu->addAction(m_accionActualizarLuna);
+        ui->mainToolBar->addAction(m_accionActualizarLuna);
 
         // ------------------------------------------------------ MODO QUIOSCO
         //
@@ -335,17 +343,32 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // Add the news label to the news toolbar.
     {
-        m_newsChecker.reset(new NewsChecker(APPLICATION->network(), BuildConfig.NEWS_RSS_URL));
-        newsLabel = new QToolButton();
-        newsLabel->setIcon(QIcon::fromTheme("news"));
-        newsLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        newsLabel->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-        newsLabel->setFocusPolicy(Qt::NoFocus);
-        ui->newsToolBar->insertWidget(ui->actionMoreNews, newsLabel);
+        // ⚠ SIN FEED NO SE ARRANCA EL LECTOR NI SE ENSEÑA LA BARRA.
+        //
+        // Al renombrar la marca se vacio `NEWS_RSS_URL` --las noticias eran de
+        // Freesm-- pero nadie le dijo al panel que entonces no hay nada que
+        // pedir, y se quedaba en "Cargando noticias..." PARA SIEMPRE. Un
+        // mensaje de carga que nunca termina es peor que no tener el panel:
+        // parece que algo esta roto.
+        if (BuildConfig.NEWS_RSS_URL.isEmpty()) {
+            // ⚠ NADA DE `return` AQUI: esto es un ambito suelto dentro del
+            //   CONSTRUCTOR, no una funcion. Un `return` se saltaria todo lo
+            //   que viene despues --la lista de instancias incluida-- y la
+            //   ventana saldria a medio construir sin dar ningun error.
+            ui->newsToolBar->setVisible(false);
+        } else {
+            m_newsChecker.reset(new NewsChecker(APPLICATION->network(), BuildConfig.NEWS_RSS_URL));
+            newsLabel = new QToolButton();
+            newsLabel->setIcon(QIcon::fromTheme("news"));
+            newsLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+            newsLabel->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+            newsLabel->setFocusPolicy(Qt::NoFocus);
+            ui->newsToolBar->insertWidget(ui->actionMoreNews, newsLabel);
 
-        connect(newsLabel, &QAbstractButton::clicked, this, &MainWindow::newsButtonClicked);
-        connect(m_newsChecker.get(), &NewsChecker::newsLoaded, this, &MainWindow::updateNewsLabel);
-        updateNewsLabel();
+            connect(newsLabel, &QAbstractButton::clicked, this, &MainWindow::newsButtonClicked);
+            connect(m_newsChecker.get(), &NewsChecker::newsLoaded, this, &MainWindow::updateNewsLabel);
+            updateNewsLabel();
+        }
     }
 
     // Create the instance list widget
