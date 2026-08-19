@@ -488,8 +488,19 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // load the news
     {
-        m_newsChecker->reloadNews();
-        updateNewsLabel();
+        // ⚠ SIN FEED NO HAY LECTOR, Y ESTO LO DABA POR HECHO.
+        //
+        // Vaciar `NEWS_RSS_URL` dejo `m_newsChecker` a nulo, y esta llamada
+        // --que no comprobaba nada-- tiraba el launcher con una VIOLACION DE
+        // ACCESO al arrancar: la ventana no llegaba a aparecer y el proceso
+        // moria con -1073741819, sin mensaje ni dialogo. Desde fuera parecia
+        // "hago doble clic y no pasa nada".
+        //
+        // Quitar una funcion no basta: hay que ir a buscar a quien la usaba.
+        if (m_newsChecker) {
+            m_newsChecker->reloadNews();
+            updateNewsLabel();
+        }
     }
 
     if (APPLICATION->updaterEnabled()) {
@@ -882,6 +893,8 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev)
 
 void MainWindow::updateNewsLabel()
 {
+    if (!m_newsChecker || !newsLabel)
+        return;
     if (m_newsChecker->isLoadingNews()) {
         newsLabel->setText(tr("Loading news..."));
         newsLabel->setEnabled(false);
@@ -1563,6 +1576,8 @@ void MainWindow::on_actionOpenWiki_triggered()
 
 void MainWindow::on_actionMoreNews_triggered()
 {
+    if (!m_newsChecker)
+        return;
     auto entries = m_newsChecker->getNewsEntries();
     NewsDialog news_dialog(entries, this);
     news_dialog.exec();
@@ -1570,6 +1585,8 @@ void MainWindow::on_actionMoreNews_triggered()
 
 void MainWindow::newsButtonClicked()
 {
+    if (!m_newsChecker)
+        return;
     auto entries = m_newsChecker->getNewsEntries();
     NewsDialog news_dialog(entries, this);
     news_dialog.toggleArticleList();
