@@ -62,3 +62,8 @@ flatbuild
 
 # Snap
 *.snap
+
+# El instalador que deja makensis en la raiz. Se reparte por las releases
+# del CI, no metido en el repositorio.
+*Setup*.exe
+/install/
