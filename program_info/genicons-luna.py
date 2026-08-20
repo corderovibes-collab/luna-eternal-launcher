@@ -25,9 +25,26 @@ FUENTE = AQUI / "LunaEternal.source.png"
 APPID = "net.pokereport.LunaEternal"
 BINARIO = "lunaeternal"
 
-src = Image.open(FUENTE).convert("RGBA")
-if src.size != (src.size[0], src.size[0]):
-    raise SystemExit(f"La fuente tiene que ser cuadrada, y es {src.size}")
+original = Image.open(FUENTE).convert("RGBA")
+
+# --- Recortar el margen transparente ---------------------------------------
+# El arte suele venir con aire alrededor. Sin recortarlo, el icono se ve
+# pequeño dentro de su casilla -- y en la barra de tareas, donde son 16
+# pixeles, esa diferencia se nota mucho.
+caja = original.getbbox()
+recortada = original.crop(caja) if caja else original
+
+# --- Cuadrar sin deformar ---------------------------------------------------
+# ⚠ NADA DE REDIMENSIONAR A LA FUERZA. Estirar un logo de 1258x1296 a un
+#   cuadrado lo deja aplastado, y en un icono pequeño se percibe como "algo no
+#   encaja" aunque no se sepa decir por que. Se centra en un lienzo cuadrado
+#   transparente del lado mayor.
+lado = max(recortada.size)
+lienzo = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+lienzo.paste(recortada, ((lado - recortada.size[0]) // 2, (lado - recortada.size[1]) // 2))
+
+src = lienzo.resize((1024, 1024), Image.LANCZOS)
+print(f"  fuente {original.size} -> recortada {recortada.size} -> 1024x1024")
 
 # --- Windows: un solo .ico con todas las resoluciones dentro --------------
 # Sin las pequeñas, Windows escala la de 256 para la barra de tareas y sale
