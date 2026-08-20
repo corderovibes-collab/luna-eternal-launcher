@@ -1,0 +1,106 @@
+# Compila el launcher de Luna Eternal para Windows y publica el instalador.
+#
+# Se dispara al empujar una etiqueta `v*` (por ejemplo `v0.2.0`), y deja el
+# `.exe` colgado de la release correspondiente.
+#
+#   git tag v0.2.0 && git push origin v0.2.0
+#
+# ⚠ ES UN FLUJO PROPIO, NO EL DE FREESM.
+#
+#   Los suyos (`windows.yml`, `build.yml`) montan una matriz enorme --MinGW,
+#   ARM64, portable, firma con sus secretos-- pensada para su proyecto. Aqui
+#   hace falta UNA cosa: el instalador de 64 bits que se reparte a los
+#   jugadores. Se quedan los suyos por si algun dia se necesitan, pero este es
+#   el que publica.
+#
+# ⚠ LTO ENCENDIDO. Lo que se reparte tiene que salir optimizado; en local se
+#   desarrolla con `-DENABLE_LTO=OFF` porque cuesta ~9 minutos por enlazado.
+
+name: Luna Eternal · instalador de Windows
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: # para poder lanzarlo a mano y comprobar que compila
+
+permissions:
+  contents: write # necesario para crear la release y subirle el .exe
+
+jobs:
+  windows:
+    runs-on: windows-2022
+
+    steps:
+      - name: Traer el codigo
+        uses: actions/checkout@v4
+        with:
+          submodules: true # libnbtplusplus vive como submodulo
+
+      - name: Qt 6.10.2
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.10.2"
+          arch: win64_msvc2022_64
+          # Los mismos que usa el toolchain local. Sin `qtnetworkauth` el
+          # proyecto no configura.
+          modules: qtimageformats qtnetworkauth
+          cache: true
+
+      - name: vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          # El manifiesto (`vcpkg.json`) manda: libarchive, cmark, qrencode,
+          # tomlplusplus, zlib. Se cachean para no recompilarlos cada vez.
+          runVcpkgInstall: false
+
+      - name: Entorno de MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Configurar
+        run: |
+          cmake --preset windows_msvc `
+            -DENABLE_LTO=ON `
+            "-DLauncher_UPDATER_GITHUB_REPO=https://github.com/${{ github.repository }}"
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+          ARTIFACT_NAME: luna-launcher-win-x64
+          BUILD_PLATFORM: windows-msvc
+
+      - name: Compilar
+        run: cmake --build --preset windows_msvc --config Release
+
+      - name: Preparar la instalacion
+        # ⚠ `cmake --install` y NO empaquetar `build/Release` a pelo: esa
+        #   carpeta lleva los ~20 ejecutables de prueba, los .lib y los .pdb.
+        run: cmake --install build --prefix install --config Release
+
+      - name: Instalador NSIS
+        # ⚠ HAY QUE ESTAR DENTRO de `install`: el .nsi coge los ficheros por
+        #   ruta RELATIVA. Desde otro sitio el instalador sale VACIO sin error.
+        run: |
+          cd install
+          makensis -NOCD "${{ github.workspace }}\build\program_info\win_install.nsi"
+
+      - name: Comprobar que el instalador existe
+        # ⚠ El .nsi lo escribe en la RAIZ del proyecto, no en `install`.
+        #   Comprobarlo aqui evita publicar una release vacia.
+        run: |
+          $exe = Get-ChildItem . -Filter "*Setup*.exe" -File | Select-Object -First 1
+          if (-not $exe) { throw "makensis no dejo instalador" }
+          "instalador: $($exe.Name)  $([math]::Round($exe.Length/1MB,1)) MB"
+
+      - name: Guardar el instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: LunaEternal-Setup
+          path: "*Setup*.exe"
+
+      - name: Publicar en la release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "*Setup*.exe"
+          generate_release_notes: true
