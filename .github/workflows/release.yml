@@ -1,9 +1,25 @@
 name: Build Application and Make Release
 
+# ⚠⚠ LUNA ETERNAL: ESTE FLUJO YA NO SE DISPARA SOLO. Aqui ponia:
+#
+#     on:
+#       push:
+#         tags:
+#           - "*"
+#
+# que es de Freesm y estaba bien PARA FREESM. En este fork significa que
+# CUALQUIER etiqueta lanza su matriz entera --MinGW, ARM64, macOS, Linux,
+# portable, firma con Azure Trusted Signing-- usando secretos que este
+# repositorio no tiene. Resultado: cada publicacion nuestra arrancaria un flujo
+# condenado a fallar, y encima peleandose por la MISMA release que
+# `luna-release.yml` esta creando.
+#
+# No se borra --si algun dia hace falta compilar para Linux o macOS, esto ya
+# esta escrito y probado-- pero se lanza a mano.
+#
+# El que publica el instalador que se reparte es `luna-release.yml`, con `v*`.
 on:
-  push:
-    tags:
-      - "*"
+  workflow_dispatch:
 
 permissions: { }
 

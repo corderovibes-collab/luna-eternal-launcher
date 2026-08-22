@@ -194,8 +194,22 @@ set(Launcher_LEGACY_FMLLIBS_BASE_URL "https://files.prismlauncher.org/fmllibs/" 
 #
 # 0.x a proposito: todavia no hay modo quiosco, ni perfiles, ni diagnostico,
 # ni traduccion. Decir 1.0 seria mentir sobre lo que hay.
+# ⚠⚠ ESTE NUMERO TIENE QUE COINCIDIR CON LA ETIQUETA QUE SE EMPUJA.
+#
+# La CI (`luna-release.yml`) NO deriva la version de la etiqueta: compila lo que
+# diga este fichero y cuelga el resultado de la release que la etiqueta nombra.
+# O sea que `git tag v0.2.0` con un 0.1.0 aqui publica una release "v0.2.0" con
+# un binario que se identifica como 0.1.0.
+#
+# Y eso no es cosmetico: el autoactualizador compara la version que corre contra
+# la de la ultima release. Con las dos descuadradas, el jugador actualiza,
+# sigue viendo 0.1.0, y VUELVE A ACTUALIZAR EN CADA ARRANQUE. Un bucle que no da
+# ningun error -- el mismo tipo de fallo mudo que avisa el comentario de arriba,
+# por el otro lado.
+#
+# Subir de version = tocar esto Y empujar la etiqueta que le corresponde.
 set(Launcher_VERSION_MAJOR 0)
-set(Launcher_VERSION_MINOR 1)
+set(Launcher_VERSION_MINOR 2)
 set(Launcher_VERSION_PATCH 0)
 set(Launcher_VERSION_CODENAME "Ciudadela")
 
