@@ -79,6 +79,15 @@ class UpdateTask : public Task {
     void descargar();
     void terminar();
 
+    /**
+     * Convierte la lista de fallos en un mensaje que se pueda leer.
+     *
+     * `respaldo` es lo que diga `ConcurrentTask`, y se usa solo si por algun
+     * camino no llego a apuntarse ningun fallo concreto: un mensaje generico
+     * es malo, pero una ventana sin explicacion es peor.
+     */
+    QString resumenDeFallos(const QString& respaldo) const;
+
     QString m_instanceRoot;
     QString m_profile;
     Mode m_mode;
@@ -86,6 +95,9 @@ class UpdateTask : public Task {
     Manifest m_manifest;
     Plan m_plan;
     Task::Ptr m_sub;
+
+    /** Un motivo por cada fichero que no se pudo traer, con nombre y causa. */
+    QStringList m_fallos;
 
     int m_downloaded = 0;
     int m_removed = 0;

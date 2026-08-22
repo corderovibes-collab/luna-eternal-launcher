@@ -57,6 +57,11 @@
 #include "ui/ViewLogWindow.h"
 
 #include "ui/dialogs/ProgressDialog.h"
+
+// Luna Eternal: el pack se pone al dia tambien en el arranque por `--launch`.
+#include <QMessageBox>
+#include "luna/LunaConfig.h"
+#include "luna/LunaUpdate.h"
 #include "ui/instanceview/AccessibleInstanceView.h"
 
 #include "ui/pages/BasePageProvider.h"
@@ -662,6 +667,9 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         // que construye, quien juega no tiene por que enterarse de que existe
         // la otra opcion.
         m_settings->registerSetting("LunaProfile", QString("jugador"));
+        // Que avisos de requisitos ya ha visto este jugador, por identificador.
+        // Vacio = no ha visto ninguno. Ver `MainWindow::requisitosDelEquipo`.
+        m_settings->registerSetting("LunaAvisosVistos", QString());
         m_settings->registerSetting("IconTheme", QString("fluent_dark"));
         m_settings->registerSetting("ApplicationTheme", QString("freesm"));
         m_settings->registerSetting("BackgroundCat", QString("typescript"));
@@ -1414,6 +1422,48 @@ void Application::performMainStartupAction()
             MinecraftAccountPtr accountToUse = nullptr;
 
             qDebug() << "<> Instance" << m_instanceIdToLaunch << "launching";
+
+            // ⚠⚠ AQUI TAMBIEN SE PONE EL PACK AL DIA, Y NO ES REDUNDANTE CON EL
+            //    BOTON DE JUGAR.
+            //
+            // Este camino es el de `--launch <id>`, y NO pasa por
+            // `MainWindow::lanzarPoniendoAlDia`: llamaba a `launch()` directo,
+            // saltandose la sincronizacion Y la comprobacion de requisitos.
+            //
+            // No es un caso de laboratorio: Prism ofrece "crear acceso directo"
+            // a la instancia en su propio menu, y ese icono arranca por aqui. Un
+            // jugador que lo use se conecta con el pack VIEJO, y lo que ve es al
+            // servidor echandole con un error que no explica nada -- exactamente
+            // lo que el dialogo de Jugar existe para evitar. El agujero estaba
+            // abierto desde que se enchufo `UpdateTask`, porque se enchufo en la
+            // ventana y no en el arranque.
+            {
+                auto puesta = makeShared<Luna::UpdateTask>(inst->gameRoot(), Luna::currentProfile(), Luna::Mode::Normal);
+                bool alDia = false;
+                QString motivo;
+                connect(puesta.get(), &Task::succeeded, this, [&alDia] { alDia = true; });
+                connect(puesta.get(), &Task::failed, this, [&motivo](QString m) { motivo = m; });
+
+                ProgressDialog espera;
+                espera.setSkipButton(true, tr("Abortar"));
+                espera.execWithTask(puesta.get());
+
+                if (!alDia) {
+                    // Sin ventana principal detras, este aviso es lo UNICO que
+                    // va a ver quien arranco desde un acceso directo. Si se
+                    // callara, el sintoma seria un icono que no hace nada.
+                    const QString salto = QString(QChar(0x0A));
+                    QString texto = tr("No se pudo poner el pack al dia, asi que no se arranca el juego.") + salto + salto +
+                                    tr("Abre el launcher y vuelve a darle a Jugar.");
+                    if (!motivo.isEmpty())
+                        texto += salto + salto + tr("Detalle:") + salto + motivo;
+
+                    QMessageBox aviso(QMessageBox::Warning, tr("Luna Eternal"), texto, QMessageBox::Ok);
+                    aviso.setTextInteractionFlags(Qt::TextSelectableByMouse);
+                    aviso.exec();
+                    return;
+                }
+            }
             if (!m_serverToJoin.isEmpty()) {
                 // FIXME: validate the server string
                 targetToJoin.reset(new MinecraftTarget(MinecraftTarget::parse(m_serverToJoin, false)));

@@ -112,6 +112,14 @@ class MainWindow : public QMainWindow {
 
 
 
+    /**
+     * Comprueba los requisitos del EQUIPO y ofrece arreglar lo que se pueda.
+     *
+     * Devuelve `false` si no se debe seguir: o falta algo que no se arregla
+     * solo, o el jugador ha dicho que no a instalarlo. Ver el .cpp.
+     */
+    bool requisitosDelEquipo(BaseInstance* instance);
+
     /** Pone el pack al dia y solo entonces arranca. Ver el .cpp. */
     void lanzarPoniendoAlDia(BaseInstance* instance);
 

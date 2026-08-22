@@ -52,6 +52,7 @@
 #include "luna/LunaConfig.h"
 #include "luna/LunaFetch.h"
 #include "luna/LunaInstance.h"
+#include "luna/LunaPreflight.h"
 #include "luna/LunaUpdate.h"
 #include "ui_MainWindow.h"
 
@@ -1827,24 +1828,130 @@ void MainWindow::onCambiarPerfilLuna(bool constructor)
                     : tr("Perfil de jugador activado. Las herramientas de construccion se quitan la proxima vez que juegues."));
 }
 
+bool MainWindow::requisitosDelEquipo(BaseInstance* instance)
+{
+    auto lista = Luna::comprobarRequisitos(instance->gameRoot());
+
+    // ---------------------------------------------------- lo que se arregla solo
+    //
+    // Este es el motivo entero de que exista esta funcion. Antes, a quien le
+    // faltaba el runtime de Visual C++ le pasaba lo siguiente: el launcher
+    // abria, el pack se bajaba entero, se pulsaba Jugar, y Minecraft se cerraba
+    // al instante sin ventana ni explicacion. El jugador no tiene forma de
+    // relacionar eso con una DLL de Microsoft, asi que lo que hacia era
+    // desinstalar y marcharse.
+    for (const auto& c : lista) {
+        if (c.nivel != Luna::Nivel::Error || !c.arreglable)
+            continue;
+
+        const auto respuesta =
+            QMessageBox::question(this, tr("Luna Eternal"),
+                                  c.detalle + QString(QChar(0x0A)) + QString(QChar(0x0A)) + tr("Lo instalo ahora?"),
+                                  QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+        if (respuesta != QMessageBox::Yes)
+            return false;
+
+        unique_qobject_ptr<Task> arreglo(new Luna::InstalarVcRedistTask());
+        bool instalado = false;
+        QString motivo;
+        connect(arreglo.get(), &Task::succeeded, this, [&instalado] { instalado = true; });
+        connect(arreglo.get(), &Task::failed, this, [&motivo](QString m) { motivo = m; });
+        runModalTask(arreglo.get());
+
+        if (!instalado) {
+            QMessageBox::warning(this, tr("Luna Eternal"),
+                                 motivo.isEmpty() ? tr("No se pudo instalar el runtime de Visual C++.") : motivo);
+            return false;
+        }
+        // Se vuelve a mirar todo: lo que acaba de instalarse ya no es un
+        // problema, y no queremos arrastrar la lista vieja.
+        lista = Luna::comprobarRequisitos(instance->gameRoot());
+        break;
+    }
+
+    // ------------------------------------------------- lo que no se arregla solo
+    QStringList bloqueos;
+    for (const auto& c : lista) {
+        if (c.nivel == Luna::Nivel::Error)
+            bloqueos << QStringLiteral("%1: %2").arg(c.titulo, c.detalle);
+    }
+    if (!bloqueos.isEmpty()) {
+        QMessageBox::warning(this, tr("Luna Eternal"),
+                             tr("Tu equipo no cumple algun requisito y el juego no arrancaria:")
+                                 + QString(QChar(0x0A)) + QString(QChar(0x0A))
+                                 + bloqueos.join(QString(QChar(0x0A)) + QString(QChar(0x0A))));
+        return false;
+    }
+
+    // ------------------------------------------------------------- los avisos
+    //
+    // ⚠ SOLO LA PRIMERA VEZ QUE APARECEN. Un aviso que sale en cada partida
+    //   deja de leerse a la segunda y estorba a la tercera; el jugador aprende
+    //   a cerrarlo sin mirar, y el dia que diga algo nuevo tampoco lo leera.
+    //   Se recuerda POR IDENTIFICADORES, no con un simple "ya lo vio": si
+    //   manana aparece un aviso distinto --se llena el disco, se cae un
+    //   driver-- ese si tiene que salir.
+    QStringList avisos, ids;
+    for (const auto& c : lista) {
+        if (c.nivel != Luna::Nivel::Aviso)
+            continue;
+        ids << c.id;
+        avisos << QStringLiteral("%1: %2").arg(c.titulo, c.detalle);
+    }
+    if (!avisos.isEmpty()) {
+        const QString huella = ids.join(QLatin1Char(','));
+        if (APPLICATION->settings()->get("LunaAvisosVistos").toString() != huella) {
+            APPLICATION->settings()->set("LunaAvisosVistos", huella);
+            QMessageBox::information(this, tr("Luna Eternal"),
+                                     tr("Puedes jugar, pero conviene que sepas esto:") + QString(QChar(0x0A))
+                                         + QString(QChar(0x0A))
+                                         + avisos.join(QString(QChar(0x0A)) + QString(QChar(0x0A))));
+        }
+    }
+
+    return true;
+}
+
 void MainWindow::lanzarPoniendoAlDia(BaseInstance* instance)
 {
     if (!instance || instance->isRunning())
+        return;
+
+    // ⚠ EL EQUIPO SE MIRA ANTES QUE EL PACK, Y ESE ORDEN IMPORTA.
+    //   Bajar 434 MB para despues descubrir que falta una DLL de 600 KB es
+    //   gastarle a alguien media hora de conexion antes de darle la mala
+    //   noticia.
+    if (!requisitosDelEquipo(instance))
         return;
 
     unique_qobject_ptr<Task> puesta(
         new Luna::UpdateTask(instance->gameRoot(), Luna::currentProfile(), Luna::Mode::Normal));
 
     bool ok = false;
+    QString motivo;
     connect(puesta.get(), &Task::succeeded, this, [&ok] { ok = true; });
+    // ⚠ EL MOTIVO SE RECOGE AQUI O SE PIERDE.
+    //
+    // Antes salian DOS ventanas seguidas: la del error, con el detalle, y esta,
+    // sin el. El jugador cerraba la primera para llegar a la segunda y nos
+    // mandaba la foto de la segunda -- la que no dice nada. Poniendo el detalle
+    // tambien aqui, la unica captura que llega ya sirve para algo.
+    connect(puesta.get(), &Task::failed, this, [&motivo](QString m) { motivo = m; });
     runModalTask(puesta.get());
 
     if (!ok) {
-        QMessageBox::warning(this, tr("Luna Eternal"),
-                             tr("No se pudo poner el pack al dia, asi que no se arranca el juego.")
-                                 + QString(QChar(0x0A)) + QString(QChar(0x0A))
-                                 + tr("Con el pack a medias el servidor te echaria con un error que no "
-                                      "explica nada. Revisa tu conexion y vuelve a darle a Jugar."));
+        const QString salto = QString(QChar(0x0A));
+        QString texto = tr("No se pudo poner el pack al dia, asi que no se arranca el juego.") + salto + salto
+                        + tr("Con el pack a medias el servidor te echaria con un error que no "
+                             "explica nada. Revisa tu conexion y vuelve a darle a Jugar.");
+        if (!motivo.isEmpty())
+            texto += salto + salto + tr("Detalle:") + salto + motivo;
+
+        QMessageBox aviso(QMessageBox::Warning, tr("Luna Eternal"), texto, QMessageBox::Ok, this);
+        // El detalle es lo que hay que pegar en el canal de soporte, y no se
+        // puede pegar lo que no se puede seleccionar.
+        aviso.setTextInteractionFlags(Qt::TextSelectableByMouse);
+        aviso.exec();
         return;
     }
 

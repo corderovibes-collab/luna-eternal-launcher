@@ -26,6 +26,8 @@ set(CORE_SOURCES
     luna/LunaFetch.cpp
     luna/LunaUpdate.h
     luna/LunaUpdate.cpp
+    luna/LunaPreflight.h
+    luna/LunaPreflight.cpp
 
     # LOGIC - Base classes and infrastructure
     BaseInstaller.h
@@ -1723,6 +1725,68 @@ if(WIN32 OR (UNIX AND APPLE))
         SCRIPT ${QT_DEPLOY_SCRIPT}
         COMPONENT bundle
     )
+
+    # ------------------------------------------------- EL RUNTIME DE VISUAL C++
+    #
+    # LUNA ETERNAL: ESTO NO ESTA EN EL PROYECTO DE ARRIBA, Y HACE FALTA.
+    #
+    # Justo encima, el bundle EXCLUYE el runtime de Microsoft a proposito:
+    # `NO_COMPILER_RUNTIME` en el script de Qt, `^vcruntime.*\.dll$` en las
+    # exclusiones previas y `system32` en las posteriores --que ademas se lleva
+    # por delante `msvcp140.dll`, porque se resuelve desde ahi--.
+    #
+    # Para quien compila el launcher eso da igual: tiene Visual Studio y las
+    # DLL estan en el sistema. Para un jugador con un Windows recien instalado,
+    # NO:
+    #
+    #   lunaeternal.exe  importa  VCRUNTIME140.dll  VCRUNTIME140_1.dll  MSVCP140.dll
+    #   Qt6Core.dll      importa  ademas            MSVCP140_1.dll
+    #
+    # y sin ellas el doble clic NO HACE NADA. Ni ventana, ni error, ni log:
+    # Windows no encuentra la DLL y abandona antes de que corra una sola linea
+    # nuestra. El sintoma es indistinguible de "el launcher esta roto", y es la
+    # peor forma de perder a alguien porque ni siquiera deja rastro que mandar.
+    #
+    # ⚠ POR QUE JUNTO AL .exe Y NO INSTALANDO EL REDISTRIBUIBLE:
+    #   Windows busca las DLL en la carpeta del ejecutable ANTES que en el
+    #   sistema, asi que copiarlas ahi resuelve el arranque sin pedir permisos
+    #   de administrador --el instalador es `RequestExecutionLevel user`-- y sin
+    #   descargar nada. Son ~600 KB.
+    #
+    # ⚠ ESTO NO SUSTITUYE AL REDISTRIBUIBLE DEL SISTEMA. Los `natives` de LWJGL
+    #   que carga MINECRAFT tambien lo necesitan, y a esos no les vale una copia
+    #   junto a nuestro .exe. De eso se encarga la comprobacion de requisitos en
+    #   tiempo de ejecucion (`Luna::preflight`), que sabe instalarlo solo.
+    if(MSVC)
+        # Solo el runtime de Visual C++. La UCRT viene con Windows 10 y copiarla
+        # a mano da mas problemas que los que resuelve.
+        set(CMAKE_INSTALL_UCRT_LIBRARIES FALSE)
+        set(CMAKE_INSTALL_OPENMP_LIBRARIES FALSE)
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ${BINARY_DEST_DIR})
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)  # la regla la ponemos nosotros, ver abajo
+        include(InstallRequiredSystemLibraries)
+
+        if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+            # ⚠ `_SKIP TRUE` + regla propia, en vez de dejar que el modulo ponga
+            #   la suya. El modulo la marca con su propio COMPONENT y ese detalle
+            #   ya nos mordio en otra parte del proyecto: un componente que no se
+            #   instala no da error, simplemente no copia nada, y el instalador
+            #   sale identico y de tamaño casi igual.
+            install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION ${BINARY_DEST_DIR})
+            message(STATUS "Luna: runtime de Visual C++ empaquetado junto al ejecutable")
+            foreach(_crt ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS})
+                get_filename_component(_crt_name "${_crt}" NAME)
+                message(STATUS "  + ${_crt_name}")
+            endforeach()
+        else()
+            # No es un aviso decorativo: si esto sale, el instalador que se
+            # genere NO arranca en un Windows limpio y no hay forma de notarlo
+            # sin una maquina limpia donde probarlo.
+            message(WARNING
+                "Luna: NO se encontro el runtime de Visual C++ (CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS vacio). "
+                "El instalador resultante fallara en equipos sin el redistribuible instalado.")
+        endif()
+    endif()
     # FIXME: remove this crap once we stop using msys2
     if(MINGW)
         # i've not found a solution better than injecting the config vars like this...

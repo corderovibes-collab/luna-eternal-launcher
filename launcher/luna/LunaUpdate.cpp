@@ -187,14 +187,49 @@ void UpdateTask::descargar()
             emitFailed(tr("No se puede descargar %1: el manifiesto no trae un origen valido.").arg(f.file.path));
             return;
         }
+        // ⚠⚠ EL MOTIVO SE APUNTA AQUI PORQUE `ConcurrentTask` LO TIRA.
+        //
+        // Cuando falla mas de una subtarea, `ConcurrentTask` resume las N
+        // causas en un solo "Multiple failed tasks" y pierde el detalle. Lo que
+        // veia el jugador era esto, literalmente:
+        //
+        //     Multiples subtareas fallidas
+        //     Todos los intentos han fracasado!
+        //     Todos los intentos han fracasado!
+        //     Todos los intentos han fracasado!
+        //
+        // Ni un nombre de fichero, ni un servidor, ni un codigo. Averiguar que
+        // habia pasado exigio leer el fuente con el manifiesto al lado.
+        // Escuchando cada tarea por separado, el mensaje final puede decir QUE
+        // fallo y POR QUE, que es lo unico que convierte el informe de un
+        // jugador en algo accionable.
+        connect(t.get(), &Task::failed, this, [this](QString motivo) { m_fallos << motivo; });
         grupo->addTask(t);
     }
 
     m_sub = grupo;
     connect(grupo.get(), &Task::succeeded, this, [this] { terminar(); });
-    connect(grupo.get(), &Task::failed, this, [this](QString m) { emitFailed(m); });
+    connect(grupo.get(), &Task::failed, this, [this](QString m) { emitFailed(resumenDeFallos(m)); });
     connect(grupo.get(), &Task::progress, this, &UpdateTask::setProgress);
     grupo->start();
+}
+
+QString UpdateTask::resumenDeFallos(const QString& respaldo) const
+{
+    if (m_fallos.isEmpty())
+        return respaldo;
+
+    // Se listan los primeros y se cuentan el resto. Con la red caida fallan los
+    // 159 a la vez, y una ventana con 159 lineas no se lee: se cierra.
+    constexpr int kMostrar = 6;
+    QStringList lineas;
+    for (int i = 0; i < m_fallos.size() && i < kMostrar; i++)
+        lineas << QStringLiteral("  - %1").arg(m_fallos.at(i));
+    if (m_fallos.size() > kMostrar)
+        lineas << tr("  ...y %n fichero(s) mas", "", m_fallos.size() - kMostrar);
+
+    return tr("No se pudieron traer %n fichero(s) del pack:", "", m_fallos.size()) + QStringLiteral("\n")
+           + lineas.join(QStringLiteral("\n"));
 }
 
 void UpdateTask::terminar()
