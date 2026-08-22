@@ -40,6 +40,22 @@ QString resolveInInstance(const QString& instanceRoot, const QString& relPath);
 constexpr int kIntentosPorOrigen = 4;
 
 /**
+ * Ese codigo HTTP descarta el origen para siempre, o merece otro intento?
+ *
+ * Vive en la cabecera para poder PROBARLA. Es una tabla de cuatro casos, ninguno
+ * obvio, y equivocarse en cualquiera reconstruye el fallo que `makeFileTask`
+ * existe para arreglar:
+ *
+ *   - dar un 503 por definitivo  = volver a rendirse a la primera
+ *   - reintentar un 404 cuatro veces = hacer esperar al jugador de balde para
+ *     darle al final la misma mala noticia
+ *
+ * `0` significa que no hubo respuesta HTTP siquiera --DNS, TLS, conexion
+ * cortada-- y eso es exactamente lo que hay que reintentar.
+ */
+bool origenDescartado(int http);
+
+/**
  * Tarea que trae UN fichero: prueba sus origenes EN ORDEN y REINTENTA cada uno
  * con espera creciente. `nullptr` si el fichero no trae origen o su ruta no es
  * segura.

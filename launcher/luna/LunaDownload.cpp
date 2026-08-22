@@ -63,6 +63,13 @@ QStringList usableOrigins(const File& file)
     return out;
 }
 
+bool origenDescartado(int http)
+{
+    // Las dos excepciones hablan de TIEMPO y no de contenido: 408 (se agoto la
+    // espera) y 429 (vas demasiado rapido). Esas cambian solas; un 404 no.
+    return http >= 400 && http < 500 && http != 408 && http != 429;
+}
+
 // ⚠ NO ES UN NAMESPACE ANONIMO, Y ES A PROPOSITO: moc y los namespaces
 //   anonimos se llevan mal segun la version, y el sintoma es un error de
 //   enlazado que no menciona ni moc ni el namespace.
@@ -70,22 +77,6 @@ namespace detalle {
 
 constexpr int kEsperaBaseMs = 1000;
 constexpr int kEsperaTopeMs = 15000;
-
-/**
- * Vale la pena volver a preguntarle a ESTE servidor?
- *
- * Un 4xx dice "aqui no esta", y preguntarlo cuatro veces da cuatro veces la
- * misma respuesta: solo sirve para que el jugador espere de balde. Las dos
- * excepciones son las que hablan de tiempo y no de contenido -- 408 (se agoto
- * la espera) y 429 (vas demasiado rapido) --, y esas SI cambian solas.
- *
- * Un 0 significa que no hubo respuesta HTTP siquiera (DNS, TLS, conexion
- * cortada). Eso es justo lo que hay que reintentar.
- */
-bool esDefinitivo(int http)
-{
-    return http >= 400 && http < 500 && http != 408 && http != 429;
-}
 
 /** Trae un fichero insistiendo: varios origenes, varios intentos, espera creciente. */
 class FileTask final : public Task {
@@ -178,7 +169,7 @@ class FileTask final : public Task {
         m_ultimoMotivo = http > 0 ? tr("HTTP %1").arg(http) : motivo;
         m_intento++;
 
-        if (esDefinitivo(http)) {
+        if (origenDescartado(http)) {
             // Este origen esta descartado para siempre; los intentos que le
             // quedaban se le regalan a los demas. Si era el unico, se acabo.
             m_origenes.removeAll(url);

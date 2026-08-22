@@ -68,6 +68,44 @@ class LunaDownloadTest : public QObject {
         QCOMPARE(o.first(), QStringLiteral("https://primario/x.jar"));
     }
 
+    void test_soloUn4xxDescartaElOrigen()
+    {
+        // ⚠⚠ ESTA TABLA ES LA POLITICA DE REINTENTOS, Y CADA FILA RECONSTRUYE EL
+        //    FALLO ORIGINAL SI SE EQUIVOCA.
+        //
+        // El pack no reintentaba NADA, y eso hacia fallar la instalacion
+        // completa el 96 % de las veces. La correccion depende entera de acertar
+        // aqui: dar un 503 por definitivo es volver a rendirse a la primera, y
+        // reintentar un 404 cuatro veces es hacer esperar al jugador de balde
+        // para darle al final la misma mala noticia.
+
+        // Sin respuesta HTTP: DNS, TLS, conexion cortada. Es EL caso a
+        // reintentar, porque es lo que le pasa a un wifi domestico.
+        QVERIFY(!Luna::origenDescartado(0));
+
+        // Salio bien o redirige: no descarta nada.
+        QVERIFY(!Luna::origenDescartado(200));
+        QVERIFY(!Luna::origenDescartado(302));
+
+        // 4xx: el fichero no esta AHI, y preguntarlo otra vez da lo mismo.
+        QVERIFY(Luna::origenDescartado(400));
+        QVERIFY(Luna::origenDescartado(403));
+        QVERIFY(Luna::origenDescartado(404));
+        QVERIFY(Luna::origenDescartado(410));
+
+        // Las dos excepciones del 4xx, que hablan de TIEMPO y no de contenido.
+        // El 429 es exactamente lo que devolvia `raw.githubusercontent` cuando
+        // servia el pack (D-036): darlo por definitivo dejaria sin pack a quien
+        // instala de cero, que es como empezo todo esto.
+        QVERIFY(!Luna::origenDescartado(408));
+        QVERIFY(!Luna::origenDescartado(429));
+
+        // 5xx: el servidor esta teniendo un mal rato y se le vuelve a preguntar.
+        QVERIFY(!Luna::origenDescartado(500));
+        QVERIFY(!Luna::origenDescartado(502));
+        QVERIFY(!Luna::origenDescartado(503));
+    }
+
     void test_unaTareaPorFicheroConSusOpciones()
     {
         auto f = conOrigenes({ QStringLiteral("https://uno/x.jar"), QStringLiteral("https://espejo/x.jar") });
