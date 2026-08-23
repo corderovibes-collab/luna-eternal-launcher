@@ -34,6 +34,7 @@
  */
 
 #include <QObject>
+#include <QStringView>
 #include "BuildConfig.h"
 
 const Config BuildConfig;
@@ -138,8 +139,28 @@ QString Config::printableVersionString() const
 {
     QString vstr = versionString();
 
+    // ⚠ LA ETIQUETA LLEVA UNA `v` DELANTE Y LA VERSION NO.
+    //
+    //   Las etiquetas de este repositorio son `v0.2.0` y `versionString()`
+    //   devuelve `0.2.0`. Comparadas a pelo NUNCA son iguales, asi que a toda
+    //   compilacion etiquetada --o sea, a TODAS las que se reparten-- se le
+    //   pegaba el canal detras: el launcher se llamaba a si mismo
+    //   `0.2.0-1a2b3c4d` en vez de `0.2.0`.
+    //
+    //   No era solo feo en el "Acerca de": ESTA es la cadena con la que el
+    //   actualizador se compara contra la release, asi que el desajuste salia
+    //   del generador de versiones y llegaba hasta el dialogo de actualizar.
+    //
+    //   Se quita SOLO si va seguida de un digito, para no destrozar una
+    //   etiqueta que de verdad empiece por esa letra. Misma regla que
+    //   `Version::fromTag`, que es quien resuelve el otro lado del problema.
+    auto tag = QStringView(GIT_TAG);
+    if (tag.size() >= 2 && (tag.at(0) == QLatin1Char('v') || tag.at(0) == QLatin1Char('V')) && tag.at(1).isDigit()) {
+        tag = tag.sliced(1);
+    }
+
     // If the build is not a main release, append the channel
-    if (VERSION_CHANNEL != "stable" && GIT_TAG != vstr) {
+    if (VERSION_CHANNEL != "stable" && tag != vstr) {
         vstr += "-" + VERSION_CHANNEL;
     }
     return vstr;

@@ -1216,7 +1216,14 @@ int PrismUpdaterApp::parseReleasePage(const QByteArray* response)
             release.draft = Json::requireBoolean(release_obj, "draft");
             release.prerelease = Json::requireBoolean(release_obj, "prerelease");
             release.body = release_obj["body"].toString();
-            release.version = Version(release.tag_name);
+            // ⚠⚠ `Version::fromTag` y NO `Version(...)`: la `v` de `v0.2.0` hacia que
+            //    la etiqueta saliera SIEMPRE mayor que la version instalada, mirase
+            //    los numeros que mirase, y el jugador se quedaba en bucle de
+            //    actualizacion. El porque completo esta en Version.h.
+            //
+            //    `tag_name` se sigue guardando y enseñando tal cual: la `v` se quita
+            //    solo para comparar.
+            release.version = Version::fromTag(release.tag_name);
 
             auto release_assets_obj = Json::requireArray(release_obj, "assets");
             for (auto asset_json : release_assets_obj) {

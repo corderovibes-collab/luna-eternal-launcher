@@ -206,6 +206,60 @@ class VersionTest : public QObject {
         // transitive equivalence
         QCOMPARE(e(a, b) && e(b, c), e(a, c));
     }
+
+    // ⚠⚠ ESTA ES LA PRUEBA DEL BUCLE DE ACTUALIZACION (2026-08-23).
+    //
+    //    El launcher ofrecia actualizar a la version que YA estaba instalada,
+    //    una y otra vez, sin dar ningun error. La causa no estaba en el
+    //    actualizador: estaba aqui, en como se compara una ETIQUETA de git
+    //    contra una version.
+    //
+    //    El primer bloque documenta el fallo tal cual era --se deja escrito a
+    //    proposito, porque es el comportamiento de `Version` y NO cambia--, y
+    //    el segundo comprueba que `fromTag` lo neutraliza.
+    static void test_fromTag_quita_la_v_de_la_etiqueta()
+    {
+        // Asi se comportaba, y asi se sigue comportando: comparar la etiqueta
+        // en crudo da SIEMPRE mayor, mire los numeros que mire.
+        QVERIFY(Version("v0.2.0") > Version("0.2.0"));
+        QVERIFY(Version("v0.1.0") > Version("9.9.9"));  // <- el fallo, en una linea
+
+        // Y asi se arregla.
+        QCOMPARE(Version::fromTag("v0.2.0"), Version("0.2.0"));
+        QVERIFY(!(Version::fromTag("v0.2.0") > Version("0.2.0")));
+        QVERIFY(!(Version::fromTag("v0.2.0") < Version("0.2.0")));
+
+        // Mayuscula tambien, que una etiqueta se escribe a mano.
+        QCOMPARE(Version::fromTag("V0.2.0"), Version("0.2.0"));
+
+        // Una etiqueta sin `v` no se toca.
+        QCOMPARE(Version::fromTag("0.2.0"), Version("0.2.0"));
+
+        // Y el orden entre versiones de verdad se conserva: sin esto, quitar la
+        // `v` podria haber roto la deteccion de una actualizacion LEGITIMA.
+        QVERIFY(Version::fromTag("v0.2.0") < Version::fromTag("v0.3.0"));
+        QVERIFY(Version::fromTag("v0.2.0") < Version::fromTag("v0.2.1"));
+        QVERIFY(Version::fromTag("v0.10.0") > Version::fromTag("v0.9.0"));
+        QVERIFY(Version::fromTag("v1.0.0") > Version::fromTag("v0.99.99"));
+
+        // ⚠ La `v` solo se quita si detras va un DIGITO. Una etiqueta que de
+        //   verdad empiece por esa letra tiene que sobrevivir entera.
+        QCOMPARE(Version::fromTag("voyager-1").toString(), QString("voyager-1"));
+        QCOMPARE(Version::fromTag("v").toString(), QString("v"));
+        QCOMPARE(Version::fromTag("").toString(), QString(""));
+    }
+
+    // ⚠ La OTRA mitad del mismo fallo: una compilacion etiquetada se llamaba a
+    //   si misma `0.2.0-1a2b3c4d` porque `GIT_TAG` ("v0.2.0") nunca coincidia
+    //   con `versionString()` ("0.2.0"), asi que se le pegaba el canal detras.
+    //   Eso se arregla en BuildConfig, pero el efecto se comprueba aqui: la
+    //   version con canal NO debe parecer mas vieja que la release limpia, o
+    //   volveria el bucle por el otro lado.
+    static void test_version_con_canal_no_pide_actualizar_a_la_misma()
+    {
+        QVERIFY(Version("0.2.0-1a2b3c4d") > Version::fromTag("v0.2.0"));
+        QVERIFY(Version("0.2.0-1a2b3c4d") < Version::fromTag("v0.3.0"));
+    }
 };
 
 QTEST_GUILESS_MAIN(VersionTest)

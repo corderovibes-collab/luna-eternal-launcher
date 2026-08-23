@@ -31,11 +31,46 @@ jobs:
   windows:
     runs-on: windows-2022
 
+    # ⚠⚠ `ARTIFACT_NAME` SUBE AQUI A PROPOSITO, Y NO ES ORDEN.
+    #
+    #    Esta cadena la usan DOS pasos que tienen que decir lo mismo: el que
+    #    configura --se convierte en `Launcher_BUILD_ARTIFACT`, o sea lo que el
+    #    actualizador BUSCA-- y el que renombra el instalador, o sea lo que el
+    #    actualizador ENCUENTRA. Escrita dos veces, un dia una cambia y la otra
+    #    no, y el resultado es exactamente el fallo que este flujo acaba de
+    #    arreglar: una release que se publica bien y que nadie puede instalar.
+    env:
+      ARTIFACT_NAME: luna-launcher-win-x64
+
     steps:
       - name: Traer el codigo
         uses: actions/checkout@v4
         with:
           submodules: true # libnbtplusplus vive como submodulo
+
+      - name: Comprobar que la version compilada es la de la etiqueta
+        # ⚠⚠ LA VERSION ESTA ESCRITA A MANO EN CMakeLists.txt Y LA CI NO LA
+        #    SACABA DEL TAG.
+        #
+        #    Publicar `v0.3.0` con un `0.2.0` dentro deja al jugador en bucle:
+        #    actualiza, el binario sigue diciendo 0.2.0, y se le vuelve a
+        #    ofrecer la misma actualizacion. No da ningun error en ningun lado.
+        #
+        #    Estaba avisado en CLAUDE.md desde el 2026-08-21 y aun asi seguia
+        #    dependiendo de que alguien se acordara. Ahora lo para la CI, y lo
+        #    para ANTES de gastar 35 minutos compilando.
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          $txt = Get-Content CMakeLists.txt -Raw
+          $ma = [regex]::Match($txt, 'set\(Launcher_VERSION_MAJOR\s+(\d+)\)').Groups[1].Value
+          $mi = [regex]::Match($txt, 'set\(Launcher_VERSION_MINOR\s+(\d+)\)').Groups[1].Value
+          $pa = [regex]::Match($txt, 'set\(Launcher_VERSION_PATCH\s+(\d+)\)').Groups[1].Value
+          $enCodigo = "$ma.$mi.$pa"
+          $enEtiqueta = "${{ github.ref_name }}" -replace '^v', ''
+          "CMakeLists.txt dice $enCodigo   ·   la etiqueta dice $enEtiqueta"
+          if ($enCodigo -ne $enEtiqueta) {
+            throw "DESAJUSTE: la etiqueta es $enEtiqueta y CMakeLists.txt dice $enCodigo. Sube el numero en CMakeLists.txt, commitea, y vuelve a etiquetar -- o el jugador se queda en bucle de actualizacion."
+          }
 
       - name: Qt 6.10.2
         uses: jurplel/install-qt-action@v4
@@ -66,7 +101,6 @@ jobs:
             "-DLauncher_UPDATER_GITHUB_REPO=https://github.com/${{ github.repository }}"
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-          ARTIFACT_NAME: luna-launcher-win-x64
           BUILD_PLATFORM: windows-msvc
 
       - name: Compilar
@@ -84,18 +118,45 @@ jobs:
           cd install
           makensis -NOCD "${{ github.workspace }}\build\program_info\win_install.nsi"
 
-      - name: Comprobar que el instalador existe
+      - name: Comprobar el instalador y ponerle el nombre que el actualizador busca
         # ⚠ El .nsi lo escribe en la RAIZ del proyecto, no en `install`.
         #   Comprobarlo aqui evita publicar una release vacia.
+        #
+        # ⚠⚠ Y HAY QUE RENOMBRARLO, O LA ACTUALIZACION NO SE PUEDE INSTALAR.
+        #
+        #    NSIS lo llama `LunaEternal-Setup.exe` (sale de `Launcher_CommonName`
+        #    en program_info/CMakeLists.txt). El actualizador, en cambio, recorre
+        #    los ficheros de la release y se queda con los que CONTIENEN
+        #    `Launcher_BUILD_ARTIFACT` en el nombre --o sea `luna-launcher-win-x64`--
+        #    y descarta todo lo demas con un "platforms do not match" que solo
+        #    se ve en el log.
+        #
+        #    Resultado: la release se publicaba entera y correcta, el launcher
+        #    veia que habia version nueva, y al pulsar Actualizar no encontraba
+        #    NI UN fichero que instalar. El error no nombraba ni el fichero ni
+        #    el motivo.
+        #
+        #    Tres cosas mas que el filtro mira, y por las que este nombre esta
+        #    elegido y no es libre:
+        #      - NO puede contener `portable`  (esto es el instalador)
+        #      - NO puede acabar en .zip/.tar.gz (en Windows exige instalador)
+        #      - NO puede casar con `-qt<numero>` ni contener `arm64`
+        #    `x64` esta permitido: lo que descarta es `arm64`, que no lo contiene.
         run: |
           $exe = Get-ChildItem . -Filter "*Setup*.exe" -File | Select-Object -First 1
           if (-not $exe) { throw "makensis no dejo instalador" }
-          "instalador: $($exe.Name)  $([math]::Round($exe.Length/1MB,1)) MB"
+          $destino = "$env:ARTIFACT_NAME-Setup.exe"
+          if ($exe.Name -ne $destino) { Rename-Item -Path $exe.FullName -NewName $destino }
+          $final = Get-Item $destino
+          "instalador: $($final.Name)  $([math]::Round($final.Length/1MB,1)) MB"
+          if ($final.Name -notlike "*$env:ARTIFACT_NAME*") {
+            throw "el instalador no lleva '$env:ARTIFACT_NAME' en el nombre: el actualizador lo rechazaria"
+          }
 
       - name: Guardar el instalador
         uses: actions/upload-artifact@v4
         with:
-          name: LunaEternal-Setup
+          name: ${{ env.ARTIFACT_NAME }}-Setup
           path: "*Setup*.exe"
 
       - name: Publicar en la release

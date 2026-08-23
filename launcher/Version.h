@@ -32,6 +32,30 @@ class Version {
     Version(QString str) : m_string(std::move(str)) { parse(); }  // NOLINT(hicpp-explicit-conversions)
     Version() = default;
 
+    /// Convierte una ETIQUETA de git (`v0.2.0`) en la version que representa (`0.2.0`).
+    ///
+    /// ⚠⚠ NO ES COSMETICO: sin quitar la `v`, la comparacion sale AL REVES.
+    ///
+    ///    `Version` parte la cadena en tramos y los compara uno a uno. El primer
+    ///    tramo de `v0.2.0` es la letra `v` --de tipo TEXTO-- y el de `0.2.0` es
+    ///    el `0` --de tipo NUMERO--. Con tipos distintos la comparacion cae a
+    ///    codigo de caracter: `v` es 0x76 y `0` es 0x30, asi que la etiqueta
+    ///    resulta MAYOR mire los numeros que mire.
+    ///
+    ///    Traducido: el actualizador creia que `v0.2.0` era mas nueva que 0.2.0,
+    ///    y que 0.9.9 tambien. El jugador actualizaba, arrancaba, y se le volvia
+    ///    a ofrecer la misma actualizacion, sin un solo error en el log.
+    ///
+    ///    La `v` se quita SOLO si va seguida de un digito, para no destrozar una
+    ///    etiqueta que de verdad empiece por esa letra.
+    static Version fromTag(const QString& tag)
+    {
+        if (tag.size() >= 2 && (tag.at(0) == QLatin1Char('v') || tag.at(0) == QLatin1Char('V')) && tag.at(1).isDigit()) {
+            return Version(tag.mid(1));
+        }
+        return Version(tag);
+    }
+
    private:
     struct Section {
         enum class Type : std::uint8_t { Null, Textual, Numeric, PreRelease };
