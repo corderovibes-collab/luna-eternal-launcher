@@ -309,8 +309,19 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
     setOrganizationName(BuildConfig.LAUNCHER_NAME);
     setOrganizationDomain(BuildConfig.LAUNCHER_DOMAIN);
     setApplicationName(BuildConfig.LAUNCHER_NAME);
-    setApplicationDisplayName(
-        QString("%1 %2 %3").arg(BuildConfig.LAUNCHER_DISPLAYNAME, BuildConfig.VERSION_CODENAME, BuildConfig.printableVersionString()));
+    // ⚠ EN LA BARRA DE TITULO SOLO VA LA MARCA Y EL NUMERO. Orden del usuario
+    //   (2026-08-23): nada de nombres en clave ni de canales.
+    //
+    //   Antes ponia `LAUNCHER_DISPLAYNAME + VERSION_CODENAME +
+    //   printableVersionString()`, y salia «PokeReport Network Ciudadela
+    //   0.2.0-luna»: el nombre en clave de la version y, pegado al numero, el
+    //   canal --que es EL NOMBRE DE LA RAMA DE GIT--. Dos sitios por los que se
+    //   colaba la marca vieja sin que nadie los tuviera fichados.
+    //
+    //   `versionString()` es el numero pelado. La version completa con canal y
+    //   commit sigue estando donde hace falta: en «Acerca de», en el registro y
+    //   en lo que compara el actualizador.
+    setApplicationDisplayName(QString("%1 %2").arg(BuildConfig.LAUNCHER_DISPLAYNAME, BuildConfig.versionString()));
     setApplicationVersion(BuildConfig.printableVersionString() + "\n" + BuildConfig.GIT_COMMIT);
     setDesktopFileName(BuildConfig.LAUNCHER_APPID);
     m_startTime = QDateTime::currentDateTime();
@@ -671,8 +682,21 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         // Vacio = no ha visto ninguno. Ver `MainWindow::requisitosDelEquipo`.
         m_settings->registerSetting("LunaAvisosVistos", QString());
         m_settings->registerSetting("IconTheme", QString("fluent_dark"));
-        m_settings->registerSetting("ApplicationTheme", QString("freesm"));
-        m_settings->registerSetting("BackgroundCat", QString("typescript"));
+
+        // ⚠ SOLO AFECTA A QUIEN NO TENGA AJUSTES TODAVIA. `registerSetting`
+        //   pone el valor POR DEFECTO: a quien ya haya abierto el launcher
+        //   alguna vez se le respeta el tema que tenga guardado, aunque sea el
+        //   que venia antes. Es lo correcto --nadie quiere que le cambien la
+        //   interfaz al actualizar-- pero significa que para VERLO hay que
+        //   entrar una vez a Ajustes > Apariencia, o borrar el ajuste.
+        m_settings->registerSetting("ApplicationTheme", QString("pokereport"));
+        // ⚠ EL FONDO QUE VENIA POR DEFECTO ERA UN MEME DE TYPESCRIPT.
+        //
+        //   Se hereda de Freesm y ocupa la pantalla entera del launcher: es lo
+        //   PRIMERO que ve alguien al abrirlo, y no dice nada de este servidor.
+        //   El nuestro es la ball y el rotulo, rebajados de opacidad para que
+        //   sean fondo y no compitan con la lista de instancias.
+        m_settings->registerSetting("BackgroundCat", QString("pokereport"));
         m_settings->registerSetting("Snow", isWinter);
 
         // Remembered state

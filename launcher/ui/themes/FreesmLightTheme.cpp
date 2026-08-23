@@ -43,7 +43,7 @@ QString FreesmLightTheme::id()
 
 QString FreesmLightTheme::name()
 {
-    return QObject::tr("Luna claro");
+    return QObject::tr("Violeta claro");
 }
 
 QPalette FreesmLightTheme::colorScheme()

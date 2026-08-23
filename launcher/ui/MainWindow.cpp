@@ -120,6 +120,7 @@
 #include "ui/instanceview/InstanceProxyModel.h"
 #include "ui/instanceview/InstanceView.h"
 #include "ui/themes/ITheme.h"
+#include "ui/themes/PokeReportTheme.h"
 #include "ui/themes/ThemeManager.h"
 #include "ui/widgets/LabeledToolButton.h"
 
@@ -481,6 +482,35 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     m_statusCenter = new QLabel(tr("Total playtime: 0s"), this);
     statusBar()->addPermanentWidget(m_statusLeft, 1);
     statusBar()->addPermanentWidget(m_statusCenter, 0);
+
+    // El rotulo de la marca, lo primero de la barra principal.
+    //
+    // ⚠ SE ESCALA POR ALTURA Y CON `SmoothTransformation`. El PNG viene al
+    //   doble (68 px) justo para esto: en una pantalla a 150 % Qt dibuja el
+    //   widget a 1,5x, y un rotulo guardado al tamano exacto se veria pastoso.
+    //   Escalar hacia ABAJO desde el doble sale limpio en cualquier escala.
+    //
+    // ⚠ Y `setDevicePixelRatio(2)`, o el rotulo saldria del DOBLE de grande:
+    //   sin eso Qt trata los 68 px como 68 puntos de interfaz.
+    {
+        iniciarRecursoPokeReport();
+
+        auto* logo = new QLabel(this);
+        logo->setObjectName(QStringLiteral("marcaLogo"));
+        QPixmap rotulo(QStringLiteral(":/pokereport/letras@2x.png"));
+        if (!rotulo.isNull()) {
+            rotulo.setDevicePixelRatio(2.0);
+            logo->setPixmap(rotulo);
+            logo->setToolTip(BuildConfig.LAUNCHER_DISPLAYNAME);
+            logo->setAccessibleName(BuildConfig.LAUNCHER_DISPLAYNAME);
+            ui->mainToolBar->insertWidget(ui->mainToolBar->actions().value(0), logo);
+        } else {
+            // Un recurso que falta no puede pasar callando: el sintoma seria
+            // "la barra se ve normal", que no manda a mirar el .qrc.
+            qWarning() << "MainWindow: no se pudo cargar :/pokereport/letras@2x.png";
+            delete logo;
+        }
+    }
 
     // Add "manage accounts" button, right align
     QWidget* spacer = new QWidget();

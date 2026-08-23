@@ -4,6 +4,10 @@
         <file alias="miside-screenshot">miside-screenshot.png</file>
         <file alias="maxwell-christmas-gif">maxwell-christmas.gif</file>
         <file alias="konata-gif">konata.gif</file>
+        <!-- El fondo de la casa: la ball y el rotulo, al 42 % de alfa. Es un
+             FONDO, no el asunto de la pantalla: a plena opacidad compite con
+             las instancias, que es lo que el jugador viene a mirar. -->
+        <file alias="pokereport">pokereport.png</file>
         <file alias="typescript">typescript.png</file>
         <file alias="cucumbers">cucumbers.gif</file>
         <file alias="kitteh">kitteh.png</file>

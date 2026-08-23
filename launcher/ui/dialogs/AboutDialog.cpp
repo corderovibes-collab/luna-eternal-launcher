@@ -92,7 +92,13 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent), ui(new Ui::AboutDia
     ui->icon->setPixmap(APPLICATION->logo().pixmap(64));
     ui->title->setText(launcherName);
 
-    ui->versionLabel->setText(QString("%1 %2").arg(BuildConfig.VERSION_CODENAME, BuildConfig.printableVersionString()));
+    // ⚠ El nombre en clave se retiro (MARCA-001) y `VERSION_CODENAME` esta
+    //   vacio, asi que concatenarlo dejaba un espacio suelto delante del numero.
+    //   Aqui SI se enseña la version completa --con canal y todo--: este
+    //   dialogo es justo donde alguien mira para reportar un fallo.
+    ui->versionLabel->setText(BuildConfig.VERSION_CODENAME.isEmpty()
+                                  ? BuildConfig.printableVersionString()
+                                  : QString("%1 %2").arg(BuildConfig.VERSION_CODENAME, BuildConfig.printableVersionString()));
 
     if (!BuildConfig.BUILD_PLATFORM.isEmpty())
         ui->platformLabel->setText(tr("Platform") + ": " + BuildConfig.BUILD_PLATFORM);

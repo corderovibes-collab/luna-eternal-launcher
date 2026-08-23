@@ -1,0 +1,600 @@
+/*
+ * PokeReport Network — hoja de estilos del launcher
+ *
+ * ⚠⚠ LOS COLORES NO ESTAN ELEGIDOS A OJO: SALEN DEL LOGO.
+ *
+ *    Se muestrearon los dos PNG de la marca y de ahi vienen todos:
+ *
+ *      #FFE04F  oro claro   el amarillo alto de las letras POKEREPORT
+ *      #FFC420  oro         el color de la casa. LO UNICO que dice "pulsame"
+ *      #F86800  naranja     el borde del rotulo y las llamas de la ball
+ *      #5C1210  granate     la banda de detras de las letras
+ *      #E8189B  magenta     el neon del boton de la ball. SELECCION
+ *
+ *    Y los grises tiran a CALIDOS a proposito. Sobre un gris azulado el oro
+ *    vira a mostaza y el logo deja de pegar con su propia interfaz.
+ *
+ * ⚠ EL ORO Y EL AMBAR DE AVISO SON EL MISMO FAMILIA DE COLOR, y es el precio
+ *   de que la marca sea dorada. Se separan POR FORMA, no por color:
+ *     accion principal   DEGRADADO oro->naranja, texto oscuro
+ *     aviso              PLANO, sin relleno, y siempre con icono y texto
+ *   Nunca hay un boton de aviso.
+ *
+ * ⚠ ESTO ES UN FICHERO, NO UN LITERAL DE C++. El tema de Freesm lleva su QSS
+ *   concatenado dentro del .cpp en ~40 trozos de cadena, y eso no se puede ni
+ *   leer ni diferenciar en un commit. Aqui se carga del recurso Qt
+ *   (:/pokereport/pokereport.qss) y se edita como lo que es.
+ */
+
+/* ---------------------------------------------------------------- base --- */
+
+QMainWindow,
+QDockWidget {
+    background-color: #0D0B0C;
+}
+
+QWidget {
+    border-color: #383236;
+    font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+    border-radius: 6px;
+}
+
+QObject,
+QObject::separator,
+QObject::handle,
+QObject::tab-bar,
+QObject::tab,
+QObject::section {
+    outline: 0;
+    selection-color: #FFFFFF;
+    selection-background-color: rgba(232, 24, 155, 160);
+    alternate-background-color: transparent;
+    border-radius: 4px;
+}
+
+QObject::handle {
+    margin: 2px;
+    background: #383236;
+}
+
+QObject::handle:active {
+    margin: 2px;
+    background: #FFC420;
+}
+
+QDialog,
+QWizard *,
+QCalendarWidget *,
+#qswPages > QObject {
+    background-color: #0D0B0C;
+    color: #F3EEEA;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QToolTip {
+    background-color: #211D20;
+    color: #F3EEEA;
+    border: 1px solid #4A434A;
+    padding: 5px 8px;
+    border-radius: 6px;
+}
+
+/* ------------------------------------------------------------ cabecera --- */
+/*
+ * La barra principal es la cabecera de la marca: fondo granate muy oscuro y
+ * un filo dorado abajo, que es lo que hace el rotulo del logo.
+ */
+
+QToolBar {
+    background-color: #120F11;
+    border: 0;
+    border-bottom: 1px solid #383236;
+    spacing: 2px;
+    padding: 8px;
+}
+
+QToolBar::separator {
+    background: #383236;
+    width: 1px;
+    margin: 6px 6px;
+}
+
+QToolBar#mainToolBar {
+    border-bottom: 1px solid #5C4620;
+}
+
+/* El rotulo del logo, insertado como QLabel al principio de la barra. */
+QLabel#marcaLogo {
+    padding: 0 12px 0 4px;
+    background: transparent;
+}
+
+QToolButton {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin-left: 4px;
+    color: #F3EEEA;
+}
+
+QToolButton[popupMode="1"] {
+    padding-right: 20px;
+}
+
+QToolButton:hover {
+    background-color: #2B262A;
+}
+
+QToolButton:on,
+QToolButton:pressed {
+    background-color: #241D12;
+    border: 1px solid #5C4620;
+    color: #FFC420;
+}
+
+QToolButton:disabled {
+    color: #6B6469;
+}
+
+QToolButton::menu-indicator {
+    image: url(:/icons/fluent_dark/resources/ComboBox.png);
+    width: 32px;
+    height: 38px;
+}
+
+QToolButton::menu-arrow {
+    image: url(:/icons/fluent_dark/resources/ComboBox.png);
+    width: 20px;
+    height: 100%;
+    border-left: 1px solid #383236;
+}
+
+QToolButton::menu-button {
+    background: transparent;
+    border: none;
+}
+
+/* --------------------------------------------------------------- menus --- */
+
+QMenuBar {
+    background-color: #120F11;
+    color: #F3EEEA;
+    padding: 4px;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+QMenuBar::item:selected {
+    background-color: #2B262A;
+}
+
+QMenuBar::item:pressed {
+    background-color: #241D12;
+    color: #FFC420;
+}
+
+QMenuBar:disabled {
+    color: #6B6469;
+}
+
+QMenu {
+    background-color: #171416;
+    border: 1px solid #383236;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+QMenu::indicator,
+QMenu::icon {
+    left: 6px;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 6px 16px;
+    border-radius: 6px;
+    min-width: 60px;
+    margin: 2px;
+    border: 1px solid transparent;
+    color: #F3EEEA;
+}
+
+QMenu::item:selected {
+    background-color: #2B262A;
+}
+
+QMenu::item:pressed {
+    background-color: #241D12;
+    color: #FFC420;
+}
+
+QMenu::item:disabled {
+    color: #6B6469;
+    background-color: transparent;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #383236;
+    margin: 5px 8px;
+}
+
+QMenu::right-arrow {
+    image: url(:/icons/fluent_dark/resources/TreeViewClose.png);
+    min-width: 40px;
+    min-height: 18px;
+}
+
+/* ------------------------------------------------------------- botones --- */
+/*
+ * ⚠ EL BOTON POR DEFECTO ES EL DE LA MARCA, y esto no es decorativo.
+ *
+ *   `QPushButton:default` es el que tiene el foco de accion en un dialogo --
+ *   Jugar, Instalar, Aceptar. Es el UNICO con degradado, asi que en cualquier
+ *   pantalla se ve de un vistazo cual es la accion que se espera.
+ */
+
+QPushButton {
+    background-color: #211D20;
+    border: 1px solid #383236;
+    border-radius: 6px;
+    color: #F3EEEA;
+    padding: 6px 19px;
+    margin-right: 5px;
+}
+
+QPushButton:hover {
+    background-color: #2B262A;
+    border: 1px solid #4A434A;
+}
+
+QPushButton:pressed,
+QPushButton:pressed:focus {
+    background-color: #1C1712;
+    border: 1px solid #FFC420;
+    color: #FFC420;
+}
+
+QPushButton:focus {
+    border: 1px solid #FFC420;
+}
+
+QPushButton:disabled {
+    color: #6B6469;
+    background-color: #141113;
+    border: 1px solid #2B262A;
+}
+
+QPushButton:default {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                      stop: 0 #FFD84A, stop: 1 #F89400);
+    border: 1px solid #F86800;
+    color: #3A1A00;
+    font-weight: 700;
+    padding: 7px 20px;
+}
+
+QPushButton:default:hover {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                      stop: 0 #FFE870, stop: 1 #FFA51F);
+}
+
+QPushButton:default:pressed {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                      stop: 0 #E0A800, stop: 1 #D25800);
+}
+
+QPushButton:default:disabled {
+    background-color: #2B2520;
+    border: 1px solid #2B2520;
+    color: #6B5C48;
+}
+
+/* --------------------------------------------------------------- cajas --- */
+
+QGroupBox {
+    border-radius: 8px;
+    border: 1px solid #383236;
+    margin-top: 24px;
+    margin-bottom: 4px;
+    background-color: #171416;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 6px 4px 6px;
+    color: #FFC420;
+    border-bottom: 1px solid #FFC420;
+}
+
+QGroupBox::title::disabled {
+    color: #6B6469;
+    border-bottom: 1px solid #383236;
+}
+
+/* --------------------------------------------------------------- listas -- */
+/*
+ * ⚠ LA SELECCION ES MAGENTA Y EL HOVER ES GRIS, y estan separados a proposito:
+ *   el hover dice "esto se puede pulsar" y la seleccion dice "esto es lo que
+ *   tienes elegido". Con el mismo color, mover el raton por la lista parece
+ *   que va cambiando la seleccion.
+ */
+
+QListView,
+QTreeView,
+QTableView {
+    background-color: transparent;
+    color: #F3EEEA;
+    outline: 0;
+    border: 0;
+}
+
+QListView::indicator,
+QListView::text,
+QListView::icon {
+    left: 4px;
+}
+
+QListView::item,
+QTreeView::item {
+    padding: 5px 4px;
+    margin-bottom: 3px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+QListView::item:hover,
+QTreeView::item:hover {
+    background-color: #2B262A;
+}
+
+QListView::item:selected,
+QTreeView::item:selected {
+    background-color: #2A1424;
+    border: 1px solid #E8189B;
+    color: #FFFFFF;
+}
+
+QTreeView::indicator,
+QTreeView::icon {
+    margin: 6px;
+}
+
+QHeaderView::section {
+    background-color: #171416;
+    color: #A79FA4;
+    padding: 6px 8px;
+    border: 0;
+    border-bottom: 1px solid #383236;
+    border-radius: 0;
+}
+
+/* --------------------------------------------------------------- campos -- */
+
+QLineEdit,
+QPlainTextEdit,
+QTextEdit,
+QSpinBox,
+QDoubleSpinBox,
+QComboBox {
+    background-color: #100E10;
+    border: 1px solid #383236;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #F3EEEA;
+    selection-background-color: #E8189B;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:hover,
+QPlainTextEdit:hover,
+QTextEdit:hover,
+QSpinBox:hover,
+QDoubleSpinBox:hover,
+QComboBox:hover {
+    border: 1px solid #4A434A;
+}
+
+QLineEdit:focus,
+QPlainTextEdit:focus,
+QTextEdit:focus,
+QSpinBox:focus,
+QDoubleSpinBox:focus,
+QComboBox:focus,
+QComboBox:on {
+    border: 1px solid #FFC420;
+}
+
+QLineEdit:disabled,
+QPlainTextEdit:disabled,
+QTextEdit:disabled,
+QSpinBox:disabled,
+QDoubleSpinBox:disabled,
+QComboBox:disabled {
+    background-color: #121011;
+    border: 1px solid #2B262A;
+    color: #6B6469;
+}
+
+QComboBox::drop-down {
+    border: 0;
+    width: 26px;
+}
+
+QComboBox::down-arrow {
+    image: url(:/icons/fluent_dark/resources/ComboBox.png);
+    width: 16px;
+    height: 16px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #171416;
+    border: 1px solid #383236;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+/* ------------------------------------------------------------ pestanias -- */
+
+QTabWidget::pane {
+    border: 0;
+    border-top: 1px solid #383236;
+    border-radius: 0;
+    top: -1px;
+}
+
+QTabBar {
+    background: transparent;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: #A79FA4;
+    padding: 8px 16px;
+    margin: 0 1px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+}
+
+QTabBar::tab:hover {
+    color: #F3EEEA;
+    border-bottom: 2px solid #4A434A;
+}
+
+QTabBar::tab:selected {
+    color: #F3EEEA;
+    font-weight: 600;
+    border-bottom: 2px solid #FFC420;
+}
+
+QTabBar::tab:disabled {
+    color: #6B6469;
+}
+
+/* ------------------------------------------------------------- progreso -- */
+
+QProgressBar {
+    background-color: #211D20;
+    border: 0;
+    border-radius: 4px;
+    text-align: center;
+    color: #F3EEEA;
+    min-height: 8px;
+    max-height: 18px;
+}
+
+QProgressBar::chunk {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                                      stop: 0 #F86800, stop: 1 #FFD84A);
+    border-radius: 4px;
+}
+
+/* ------------------------------------------------------------ scrollbar -- */
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 12px;
+    margin: 0;
+    border-radius: 6px;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 12px;
+    margin: 0;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal {
+    background: #383236;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover {
+    background: #5C4620;
+}
+
+QScrollBar::handle:vertical:pressed,
+QScrollBar::handle:horizontal:pressed {
+    background: #FFC420;
+}
+
+QScrollBar::add-line,
+QScrollBar::sub-line,
+QScrollBar::add-page,
+QScrollBar::sub-page {
+    background: none;
+    border: none;
+    height: 0;
+    width: 0;
+}
+
+/* ------------------------------------------------- casillas y radiales --- */
+
+QCheckBox,
+QRadioButton {
+    color: #F3EEEA;
+    spacing: 8px;
+    background: transparent;
+}
+
+QCheckBox:disabled,
+QRadioButton:disabled {
+    color: #6B6469;
+}
+
+QCheckBox::indicator,
+QRadioButton::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #4A434A;
+    background: #100E10;
+}
+
+QCheckBox::indicator {
+    border-radius: 4px;
+}
+
+QRadioButton::indicator {
+    border-radius: 8px;
+}
+
+QCheckBox::indicator:hover,
+QRadioButton::indicator:hover {
+    border: 1px solid #FFC420;
+}
+
+QCheckBox::indicator:checked,
+QRadioButton::indicator:checked {
+    background: #FFC420;
+    border: 1px solid #FFC420;
+}
+
+/* --------------------------------------------------------- barra de estado */
+
+QStatusBar {
+    background: #120F11;
+    border-top: 1px solid #383236;
+    color: #A79FA4;
+}
+
+QStatusBar::item {
+    border: 0;
+}
+
+QSplitter::handle {
+    background: #383236;
+}

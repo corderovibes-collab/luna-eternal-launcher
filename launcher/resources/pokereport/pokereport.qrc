@@ -1,0 +1,8 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/pokereport">
+        <file>pokereport.qss</file>
+        <file>letras.png</file>
+        <file alias="letras@2x.png">letras@2x.png</file>
+    </qresource>
+</RCC>
