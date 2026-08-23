@@ -429,14 +429,28 @@ SectionEnd
 
 @Launcher_MSVC_Redist_NSIS_Section@
 
+; Los accesos directos que dejo un nombre anterior (MARCA-001).
+;
+; El acceso directo se llama como `Launcher_DisplayName`, asi que al renombrar
+; el servidor el viejo NO se sobrescribe: se queda al lado, apuntando al mismo
+; .exe, y el jugador acaba con dos iconos que hacen lo mismo. Borrarlos aqui es
+; lo unico que hay que hacer -- el .exe y la carpeta no cambian de nombre a
+; proposito, justo para no obligar a nadie a volver a bajar el pack.
+!macro BorrarAccesosViejos
+  Delete "$SMPROGRAMS\Luna Eternal.lnk"
+  Delete "$DESKTOP\Luna Eternal.lnk"
+!macroend
+
 Section "Start Menu Shortcut" SM_SHORTCUTS
 
+  !insertmacro BorrarAccesosViejos
   CreateShortcut "$SMPROGRAMS\@Launcher_DisplayName@.lnk" "$INSTDIR\@Launcher_APP_BINARY_NAME@.exe" "" "$INSTDIR\@Launcher_APP_BINARY_NAME@.exe" 0
 
 SectionEnd
 
 Section /o "Desktop Shortcut" DESKTOP_SHORTCUTS
 
+  !insertmacro BorrarAccesosViejos
   CreateShortcut "$DESKTOP\@Launcher_DisplayName@.lnk" "$INSTDIR\@Launcher_APP_BINARY_NAME@.exe" "" "$INSTDIR\@Launcher_APP_BINARY_NAME@.exe" 0
 
 SectionEnd
@@ -488,6 +502,8 @@ Section "Uninstall"
 
   Delete "$SMPROGRAMS\@Launcher_DisplayName@.lnk"
   Delete "$DESKTOP\@Launcher_DisplayName@.lnk"
+  ; Y los de los nombres anteriores, o desinstalar deja iconos huerfanos.
+  !insertmacro BorrarAccesosViejos
 
   RMDir "$INSTDIR"
 

@@ -2,7 +2,7 @@
 <component type="desktop">
   <id>@Launcher_AppID@</id>
   <name>@Launcher_DisplayName@</name>
-  <summary>Launcher oficial del servidor PokeReport: Luna Eternal</summary>
+  <summary>Launcher oficial del servidor PokeReport Network</summary>
   <developer id="net.pokereport">
     <name>PokeReport</name>
   </developer>
@@ -10,7 +10,7 @@
   <project_license>GPL-3.0-only</project_license>
   <description>
     <p>
-      Launcher del servidor PokeReport: Luna Eternal. Instala el modpack, se
+      Launcher del servidor PokeReport Network. Instala el modpack, se
       encarga de Java y mantiene todo al día sin que haya que tocar nada.
     </p>
     <p>Qué hace:</p>

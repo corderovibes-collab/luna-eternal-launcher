@@ -19,6 +19,7 @@
 
 #include "luna/LunaInstance.h"
 
+#include <QDebug>
 #include <memory>
 
 #include "InstanceList.h"
@@ -28,7 +29,15 @@ namespace Luna {
 
 QString instanceName()
 {
-    return QStringLiteral("Luna Eternal");
+    return QStringLiteral("PokeReport Network");
+}
+
+QStringList instanceNamesAntiguos()
+{
+    // Se añade AL FINAL segun vaya cambiando el nombre, y no se quita nunca
+    // ninguno: quien lleve meses sin abrir el launcher tiene el nombre de
+    // entonces en el disco.
+    return { QStringLiteral("Luna Eternal") };
 }
 
 QString fabricUid()
@@ -77,11 +86,33 @@ BaseInstance* findInstance(InstanceList* list)
 {
     if (!list)
         return nullptr;
+
+    // Primero por el nombre de ahora, que es el caso normal.
     for (int i = 0; i < list->count(); ++i) {
         auto* inst = list->at(i);
         if (inst && inst->name() == instanceName())
             return inst;
     }
+
+    // ⚠⚠ Y SOLO SI NO APARECE, por los nombres viejos -- y se RENOMBRA.
+    //
+    //    Sin esto, renombrar el servidor le crearia una SEGUNDA instancia a
+    //    todo el que ya lo tenga instalado: otros 450 MB, y su instancia de
+    //    siempre --con sus partidas y sus ajustes-- ahi al lado, con pinta de
+    //    haberse perdido.
+    //
+    //    Renombrar en vez de solo devolverla hace que la migracion pase UNA
+    //    vez: al siguiente arranque ya la encuentra por el bucle de arriba.
+    const auto antiguos = instanceNamesAntiguos();
+    for (int i = 0; i < list->count(); ++i) {
+        auto* inst = list->at(i);
+        if (inst && antiguos.contains(inst->name())) {
+            qInfo() << "Instancia" << inst->name() << "renombrada a" << instanceName();
+            inst->setName(instanceName());
+            return inst;
+        }
+    }
+
     return nullptr;
 }
 

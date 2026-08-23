@@ -1458,7 +1458,7 @@ void Application::performMainStartupAction()
                     if (!motivo.isEmpty())
                         texto += salto + salto + tr("Detalle:") + salto + motivo;
 
-                    QMessageBox aviso(QMessageBox::Warning, tr("Luna Eternal"), texto, QMessageBox::Ok);
+                    QMessageBox aviso(QMessageBox::Warning, BuildConfig.LAUNCHER_DISPLAYNAME, texto, QMessageBox::Ok);
                     aviso.setTextInteractionFlags(Qt::TextSelectableByMouse);
                     aviso.exec();
                     return;

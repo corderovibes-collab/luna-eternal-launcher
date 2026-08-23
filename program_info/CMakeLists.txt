@@ -8,8 +8,28 @@ if(UNIX)
     endif()
 endif()
 
+# ⚠⚠ AQUI HAY DOS NOMBRES Y NO SON INTERCAMBIABLES. Se comprobo leyendo
+#    win_install.nsi.in y Application.cpp, no de memoria:
+#
+#    `Launcher_DisplayName` es TODO LO QUE EL JUGADOR VE
+#      titulo del instalador · acceso directo del menu Inicio · acceso directo
+#      del escritorio · "Agregar o quitar programas" · titulo de la ventana ·
+#      dialogo "Acerca de" · ProductName del .exe
+#
+#    `Launcher_CommonName` es LA IDENTIDAD, y cambiarlo CUESTA 450 MB POR
+#    PERSONA
+#      Application.cpp hace setOrganizationName(LAUNCHER_NAME), asi que de aqui
+#      sale %APPDATA%\LunaEternal --el pack entero, las instancias, las cuentas--
+#      y ademas la carpeta de instalacion, la clave del registro y la de
+#      desinstalar. Cambiarlo deja al que ya lo tiene con una instalacion
+#      "vacia" al lado y a bajarlo todo otra vez.
+#
+#    Por eso MARCA-001 se aplica cambiando SOLO el DisplayName: el jugador ve
+#    "PokeReport Network" en todas partes y nadie vuelve a descargar nada.
+#    Lo unico que sigue diciendo "LunaEternal" son rutas y el nombre del .exe,
+#    que solo se ven yendo a buscarlas.
 set(Launcher_CommonName "LunaEternal")
-set(Launcher_DisplayName "Luna Eternal")
+set(Launcher_DisplayName "PokeReport Network")
 set(Launcher_AppID "net.pokereport.LunaEternal")
 set(Launcher_Domain "pokereport.net")
 set(Launcher_Git "https://github.com/corderovibes-collab/luna-eternal-launcher")
@@ -21,8 +41,8 @@ set(Launcher_Domain "${Launcher_Domain}" PARENT_SCOPE)
 set(Launcher_Git "${Launcher_Git}" PARENT_SCOPE)
 
 set(Launcher_SVGFileName "${Launcher_AppID}.svg")
-set(Launcher_Copyright "© 2026 PokeReport: Luna Eternal\\n© 2024-2026 Freesm Launcher Contributors\\n© 2022-2026 Prism Launcher Contributors\\n© 2021-2022 PolyMC Contributors\\n© 2012-2021 MultiMC Contributors")
-set(Launcher_Copyright_Mac "© 2026 PokeReport: Luna Eternal, © 2024-2026 Freesm Launcher Contributors, © 2022-2026 Prism Launcher Contributors, © 2021-2022 PolyMC Contributors and © 2012-2021 MultiMC Contributors" PARENT_SCOPE)
+set(Launcher_Copyright "© 2026 PokeReport Network\\n© 2024-2026 Freesm Launcher Contributors\\n© 2022-2026 Prism Launcher Contributors\\n© 2021-2022 PolyMC Contributors\\n© 2012-2021 MultiMC Contributors")
+set(Launcher_Copyright_Mac "© 2026 PokeReport Network, © 2024-2026 Freesm Launcher Contributors, © 2022-2026 Prism Launcher Contributors, © 2021-2022 PolyMC Contributors and © 2012-2021 MultiMC Contributors" PARENT_SCOPE)
 set(Launcher_Copyright "${Launcher_Copyright}" PARENT_SCOPE)
 set(Launcher_UserAgent "${Launcher_CommonName}/${Launcher_VERSION_NAME}" PARENT_SCOPE)
 set(Launcher_ConfigFile "${Launcher_APP_BINARY_NAME}.cfg" PARENT_SCOPE)
@@ -40,7 +60,7 @@ set(Launcher_Branding_ICO "program_info/${Launcher_APP_BINARY_NAME}.ico")
 set(Launcher_Branding_ICO "${Launcher_Branding_ICO}" PARENT_SCOPE)
 set(Launcher_Branding_WindowsRC "program_info/${Launcher_APP_BINARY_NAME}.rc" PARENT_SCOPE)
 set(Launcher_Branding_LogoQRC "program_info/${Launcher_APP_BINARY_NAME}.qrc" PARENT_SCOPE)
-set(Launcher_Authors "Luna Eternal, Freesm Launcher, Prism Launcher & MultiMC Contributors")
+set(Launcher_Authors "PokeReport Network, Freesm Launcher, Prism Launcher & MultiMC Contributors")
 
 set(Launcher_Portable_File "program_info/portable.txt" PARENT_SCOPE)
 

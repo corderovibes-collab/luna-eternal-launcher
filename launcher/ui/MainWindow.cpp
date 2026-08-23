@@ -218,7 +218,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         // widget que le añadamos es un conflicto garantizado al traer sus
         // arreglos con `git merge upstream/develop`. Creandola aqui, el .ui
         // sigue siendo suyo byte a byte.
-        m_accionActualizarLuna = new QAction(tr("Actualizar el pack de Luna Eternal"), this);
+        m_accionActualizarLuna = new QAction(tr("Actualizar el pack de %1").arg(BuildConfig.LAUNCHER_DISPLAYNAME), this);
         connect(m_accionActualizarLuna, &QAction::triggered, this, &MainWindow::onActualizarPackLuna);
         // ⚠ AL MENU ARCHIVO NO BASTA: PRISM NO LO ENSEÑA.
         //   Su disposicion por defecto es una barra de herramientas, no una
@@ -978,13 +978,13 @@ void MainWindow::onActualizarPackLuna()
         auto fetch = makeShared<Luna::FetchManifestTask>();
         runModalTask(fetch.get());
         if (!fetch->manifest().isValid()) {
-            QMessageBox::warning(this, tr("Luna Eternal"),
+            QMessageBox::warning(this, BuildConfig.LAUNCHER_DISPLAYNAME,
                                  tr("No se pudo comprobar el pack. Revisa tu conexion y vuelve a intentarlo."));
             return;
         }
         auto* crear = Luna::makeCreationTask(fetch->manifest());
         if (!crear) {
-            QMessageBox::warning(this, tr("Luna Eternal"), tr("El manifiesto no dice que version de Minecraft usar."));
+            QMessageBox::warning(this, BuildConfig.LAUNCHER_DISPLAYNAME, tr("El manifiesto no dice que version de Minecraft usar."));
             return;
         }
         instanceFromInstanceTask(crear);
@@ -1782,7 +1782,7 @@ void MainWindow::pedirNombreSiHaceFalta()
     while (true) {
         bool aceptado = false;
         const QString nombre =
-            QInputDialog::getText(this, tr("Bienvenido a Luna Eternal"),
+            QInputDialog::getText(this, tr("Bienvenido a %1").arg(BuildConfig.LAUNCHER_DISPLAYNAME),
                                   tr("¿Con que nombre quieres jugar?") + salto + salto
                                       + tr("Tu progreso queda atado a este nombre: si lo cambias mas "
                                            "adelante, empiezas de cero.") + salto
@@ -1794,7 +1794,7 @@ void MainWindow::pedirNombreSiHaceFalta()
             return;  // ya lo creara desde el menu de cuentas si prefiere
 
         if (!valido.match(nombre).hasMatch()) {
-            QMessageBox::warning(this, tr("Luna Eternal"),
+            QMessageBox::warning(this, BuildConfig.LAUNCHER_DISPLAYNAME,
                                  tr("Ese nombre no vale. Entre 3 y 16 caracteres, "
                                     "solo letras, numeros y guion bajo."));
             continue;
@@ -1802,7 +1802,7 @@ void MainWindow::pedirNombreSiHaceFalta()
 
         auto cuenta = MinecraftAccount::createOffline(nombre);
         if (!cuenta) {
-            QMessageBox::warning(this, tr("Luna Eternal"), tr("No se pudo crear la cuenta."));
+            QMessageBox::warning(this, BuildConfig.LAUNCHER_DISPLAYNAME, tr("No se pudo crear la cuenta."));
             return;
         }
         cuentas->addAccount(cuenta);
@@ -1823,7 +1823,7 @@ void MainWindow::onCambiarPerfilLuna(bool constructor)
     // pedido, quiza mientras esta haciendo otra cosa. Se aplica en el
     // siguiente Jugar, que es cuando de verdad importa que el pack este bien.
     QMessageBox::information(
-        this, tr("Luna Eternal"),
+        this, BuildConfig.LAUNCHER_DISPLAYNAME,
         constructor ? tr("Perfil de constructor activado. Las herramientas se instalan la proxima vez que juegues.")
                     : tr("Perfil de jugador activado. Las herramientas de construccion se quitan la proxima vez que juegues."));
 }
@@ -1845,7 +1845,7 @@ bool MainWindow::requisitosDelEquipo(BaseInstance* instance)
             continue;
 
         const auto respuesta =
-            QMessageBox::question(this, tr("Luna Eternal"),
+            QMessageBox::question(this, BuildConfig.LAUNCHER_DISPLAYNAME,
                                   c.detalle + QString(QChar(0x0A)) + QString(QChar(0x0A)) + tr("Lo instalo ahora?"),
                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
         if (respuesta != QMessageBox::Yes)
@@ -1859,7 +1859,7 @@ bool MainWindow::requisitosDelEquipo(BaseInstance* instance)
         runModalTask(arreglo.get());
 
         if (!instalado) {
-            QMessageBox::warning(this, tr("Luna Eternal"),
+            QMessageBox::warning(this, BuildConfig.LAUNCHER_DISPLAYNAME,
                                  motivo.isEmpty() ? tr("No se pudo instalar el runtime de Visual C++.") : motivo);
             return false;
         }
@@ -1876,7 +1876,7 @@ bool MainWindow::requisitosDelEquipo(BaseInstance* instance)
             bloqueos << QStringLiteral("%1: %2").arg(c.titulo, c.detalle);
     }
     if (!bloqueos.isEmpty()) {
-        QMessageBox::warning(this, tr("Luna Eternal"),
+        QMessageBox::warning(this, BuildConfig.LAUNCHER_DISPLAYNAME,
                              tr("Tu equipo no cumple algun requisito y el juego no arrancaria:")
                                  + QString(QChar(0x0A)) + QString(QChar(0x0A))
                                  + bloqueos.join(QString(QChar(0x0A)) + QString(QChar(0x0A))));
@@ -1902,7 +1902,7 @@ bool MainWindow::requisitosDelEquipo(BaseInstance* instance)
         const QString huella = ids.join(QLatin1Char(','));
         if (APPLICATION->settings()->get("LunaAvisosVistos").toString() != huella) {
             APPLICATION->settings()->set("LunaAvisosVistos", huella);
-            QMessageBox::information(this, tr("Luna Eternal"),
+            QMessageBox::information(this, BuildConfig.LAUNCHER_DISPLAYNAME,
                                      tr("Puedes jugar, pero conviene que sepas esto:") + QString(QChar(0x0A))
                                          + QString(QChar(0x0A))
                                          + avisos.join(QString(QChar(0x0A)) + QString(QChar(0x0A))));
@@ -1947,7 +1947,7 @@ void MainWindow::lanzarPoniendoAlDia(BaseInstance* instance)
         if (!motivo.isEmpty())
             texto += salto + salto + tr("Detalle:") + salto + motivo;
 
-        QMessageBox aviso(QMessageBox::Warning, tr("Luna Eternal"), texto, QMessageBox::Ok, this);
+        QMessageBox aviso(QMessageBox::Warning, BuildConfig.LAUNCHER_DISPLAYNAME, texto, QMessageBox::Ok, this);
         // El detalle es lo que hay que pegar en el canal de soporte, y no se
         // puede pegar lo que no se puede seleccionar.
         aviso.setTextInteractionFlags(Qt::TextSelectableByMouse);

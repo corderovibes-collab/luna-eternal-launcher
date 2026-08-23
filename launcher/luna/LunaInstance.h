@@ -20,6 +20,7 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 
 #include "BaseVersion.h"
 #include "luna/LunaManifest.h"
@@ -32,6 +33,24 @@ namespace Luna {
 
 /** El nombre que ve el jugador. Hay UNA instancia y es esta. */
 QString instanceName();
+
+/**
+ * Los nombres que tuvo antes.
+ *
+ * ⚠⚠ ESTO NO ES NOSTALGIA, ES LO QUE EVITA UNA SEGUNDA DESCARGA DE 450 MB.
+ *
+ *    `findInstance()` busca la instancia POR NOMBRE. Al renombrar el servidor
+ *    a «PokeReport Network» (MARCA-001), la instancia que la gente ya tiene en
+ *    el disco se sigue llamando «Luna Eternal»: sin esta lista no se
+ *    encontraria, el launcher creeria que no hay ninguna y **crearia una
+ *    segunda al lado** -- otro pack entero, y las partidas y la configuracion
+ *    del jugador aparentemente perdidas en la primera.
+ *
+ *    Por eso `findInstance()` reconoce los nombres viejos y RENOMBRA la
+ *    instancia que encuentra, en vez de limitarse a devolverla: asi la
+ *    migracion ocurre una sola vez y sola.
+ */
+QStringList instanceNamesAntiguos();
 
 /** Identificador del cargador dentro del sistema de componentes. */
 QString fabricUid();

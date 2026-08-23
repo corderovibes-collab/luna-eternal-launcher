@@ -116,7 +116,28 @@ class LunaInstanceTest : public QObject {
     void test_hayUnSoloNombreDeInstancia()
     {
         QVERIFY(!Luna::instanceName().isEmpty());
-        QCOMPARE(Luna::instanceName(), QStringLiteral("Luna Eternal"));
+        QCOMPARE(Luna::instanceName(), QStringLiteral("PokeReport Network"));
+    }
+
+    // ⚠⚠ EL NOMBRE VIEJO TIENE QUE SEGUIR RECONOCIENDOSE (MARCA-001).
+    //
+    //    `findInstance()` busca POR NOMBRE. Si esta lista se vacia o pierde
+    //    «Luna Eternal», el launcher deja de encontrar la instancia que la
+    //    gente ya tiene y le crea una SEGUNDA al lado: 450 MB otra vez, y sus
+    //    partidas con pinta de haberse perdido.
+    //
+    //    Y no puede contener el nombre de AHORA: `findInstance` mira primero
+    //    el actual, asi que tenerlo tambien aqui seria codigo muerto que
+    //    ademas sugiere que el renombrado se aplica a si mismo.
+    void test_losNombresViejosNoSePierden()
+    {
+        const auto antiguos = Luna::instanceNamesAntiguos();
+        QVERIFY(!antiguos.isEmpty());
+        QVERIFY(antiguos.contains(QStringLiteral("Luna Eternal")));
+        QVERIFY(!antiguos.contains(Luna::instanceName()));
+        for (const auto& n : antiguos) {
+            QVERIFY(!n.isEmpty());
+        }
     }
 };
 
