@@ -590,6 +590,22 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     setSelectedInstanceById(APPLICATION->settings()->get("SelectedInstance").toString());
 
+    // ⚠ SI NO HAY NINGUNA SELECCIONADA, SE SELECCIONA LA NUESTRA.
+    //
+    //   Prism guarda cual estaba elegida la ultima vez, y en un arranque nuevo
+    //   ese ajuste esta vacio: la ventana abre con «No hay una instancia
+    //   seleccionada» y con Lanzar, Editar y Carpeta APAGADOS. Aqui hay UNA
+    //   instancia, asi que no hay nada que elegir -- pedirle al jugador que la
+    //   pulse antes de poder jugar es un paso que no decide nada.
+    //
+    //   Se hace despues de lo de arriba a proposito: si tenia una elegida, esa
+    //   manda. Esto solo rellena el hueco.
+    if (!m_selectedInstance) {
+        if (auto* nuestra = Luna::findInstance(APPLICATION->instances())) {
+            setSelectedInstanceById(nuestra->id());
+        }
+    }
+
     // removing this looks stupid
     view->setFocus();
 
