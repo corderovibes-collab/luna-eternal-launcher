@@ -1331,7 +1331,23 @@ bool Application::createSetupWizard()
     bool pasteInterventionRequired = settings()->get("PastebinURL") != "";
     bool validWidgets = m_themeManager->isValidApplicationTheme(settings()->get("ApplicationTheme").toString());
     bool validIcons = m_themeManager->isValidIconTheme(settings()->get("IconTheme").toString());
-    bool login = !m_accounts->anyAccountIsValid() && capabilities() & Application::SupportsMSA;
+    // ⚠⚠ LA PAGINA DE CUENTAS DE PRISM NO SE ENSEÑA, Y ES A PROPOSITO.
+    //
+    //    Es LA PRIMERA PANTALLA que ve alguien que acaba de instalar, y ofrece
+    //    cuatro opciones --Microsoft, Ely.by, sin conexion, personalizada-- de
+    //    las que aqui solo vale una. Tres de cada cuatro caminos son trampas.
+    //
+    //    Este servidor va en `online-mode=false` y ya tenemos lo que hace
+    //    falta: `MainWindow::pedirNombreSiHaceFalta()` pregunta el nombre con
+    //    la ventana ya delante, valida el formato y explica lo que ningun
+    //    asistente de Prism puede explicar -- que el nombre ES la identidad,
+    //    porque el UUID se calcula a partir de el, y cambiarlo mas tarde es
+    //    empezar de cero.
+    //
+    //    Se deja en `false` en vez de quitar la pagina de la lista para que el
+    //    asistente entero no salga cuando la cuenta era el UNICO motivo por el
+    //    que iba a salir. Quitando solo la pagina, saldria un asistente vacio.
+    bool login = false;
     bool fetchFlameAPIKey = settings()->get("FlameKeyShouldBeFetchedOnStartup").toBool();
     bool themeInterventionRequired = !validWidgets || !validIcons;
     bool wizardRequired =
