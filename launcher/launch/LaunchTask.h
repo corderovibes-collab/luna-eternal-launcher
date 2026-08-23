@@ -68,6 +68,21 @@ class LaunchTask : public Task {
     qint64 pid() { return m_pid; }
 
     /**
+     * El codigo con el que murio el proceso del juego.
+     *
+     * ⚠ HACE FALTA PARA EL DIAGNOSTICO, y no siempre hay log que mirar. Los dos
+     *   cierres de golpe de Windows --0xC0000005 y 0xC0000409-- matan el proceso
+     *   dentro del controlador de la grafica o del propio sistema, sin que Java
+     *   llegue a escribir una sola linea. Sin el codigo, esos dos casos se
+     *   quedan en «se cerro y no se sabe por que».
+     *
+     * `0` mientras no haya terminado, que es lo mismo que una salida limpia.
+     */
+    void setExitCode(int code) { m_exitCode = code; }
+
+    int exitCode() const { return m_exitCode; }
+
+    /**
      * @brief prepare the process for launch (for multi-stage launch)
      */
     virtual void executeTask() override;
@@ -125,6 +140,7 @@ class LaunchTask : public Task {
     int currentStep = -1;
     State state = NotStarted;
     qint64 m_pid = -1;
+    int m_exitCode = 0;
     LogParser m_stdoutParser;
     LogParser m_stderrParser;
 };

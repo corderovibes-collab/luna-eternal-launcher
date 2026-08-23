@@ -110,6 +110,24 @@ class MainWindow : public QMainWindow {
     /** Cambia entre jugador y constructor, e instala o desinstala en consecuencia. */
     void onCambiarPerfilLuna(bool constructor);
 
+    /**
+     * Comprueba fichero a fichero y vuelve a bajar lo que no cuadre.
+     *
+     * ⚠ NO ES "ACTUALIZAR OTRA VEZ". Actualizar se fia del estado guardado, asi
+     *   que un fichero que se corrompio DESPUES de instalarse sigue apuntado
+     *   como correcto y sobrevive a cualquier numero de actualizaciones. Esto
+     *   no se fia de nada: recalcula el sha1 de todo lo que hay en disco.
+     */
+    void repararInstalacion();
+
+    /**
+     * Cuenta por que se cerro el juego, y ofrece el boton que lo arregla.
+     *
+     * Lo decide `Luna::diagnosticar`; aqui solo se dibuja. Ver la señal
+     * `Application::juegoTerminadoConProblema`.
+     */
+    void onJuegoTerminadoConProblema(QString titulo, QString detalle, int accion);
+
 
 
     /**
@@ -287,6 +305,7 @@ class MainWindow : public QMainWindow {
     /** Creada por codigo: no toca el .ui, asi no choca con merges de upstream. */
     QAction* m_accionActualizarLuna = nullptr;
     QAction* m_accionPerfilConstructor = nullptr;
+    QAction* m_accionRepararLuna = nullptr;
     QString m_currentInstIcon;
 
     // managed by the application object

@@ -54,6 +54,7 @@
 #include "luna/LunaInstance.h"
 #include "luna/LunaPreflight.h"
 #include "luna/LunaUpdate.h"
+#include "luna/LunaDiagnostico.h"
 #include "ui_MainWindow.h"
 
 #include <QDir>
@@ -243,6 +244,26 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(m_accionPerfilConstructor, &QAction::toggled, this, &MainWindow::onCambiarPerfilLuna);
         ui->fileMenu->addAction(m_accionPerfilConstructor);
         ui->mainToolBar->addAction(m_accionPerfilConstructor);
+
+        // ⚠ REPARAR NO ES "ACTUALIZAR OTRA VEZ", y por eso es una accion aparte.
+        //
+        //   Actualizar se fia del estado guardado (`installed.json`): si un
+        //   fichero se corrompio DESPUES de instalarse, sigue apuntado como
+        //   correcto y sobrevive a CUALQUIER numero de actualizaciones. Reparar
+        //   no se fia de nada -- comprueba el sha1 de todo lo que hay en disco.
+        //
+        //   Va al menu y NO a la barra: es la accion de cuando algo va mal, y
+        //   en la barra invitaria a pulsarla sin motivo. Se llega tambien desde
+        //   el aviso que sale cuando el juego se cierra mal.
+        m_accionRepararLuna = new QAction(tr("Reparar la instalacion"), this);
+        m_accionRepararLuna->setToolTip(
+            tr("Comprueba fichero a fichero y vuelve a bajar lo que no cuadre. Tarda mas que actualizar."));
+        m_accionRepararLuna->setIcon(QIcon::fromTheme(QStringLiteral("loadermods")));
+        connect(m_accionRepararLuna, &QAction::triggered, this, [this] { repararInstalacion(); });
+        ui->fileMenu->addAction(m_accionRepararLuna);
+
+        // Y el aviso de por que se cerro el juego.
+        connect(APPLICATION, &Application::juegoTerminadoConProblema, this, &MainWindow::onJuegoTerminadoConProblema);
 
         // ------------------------------------------------------ MODO QUIOSCO
         //
@@ -1027,6 +1048,78 @@ void MainWindow::onActualizarPackLuna()
     unique_qobject_ptr<Task> tarea(
         new Luna::UpdateTask(inst->gameRoot(), Luna::currentProfile(), Luna::Mode::Normal));
     runModalTask(tarea.get());
+}
+
+void MainWindow::repararInstalacion()
+{
+    auto* inst = Luna::findInstance(APPLICATION->instances());
+    if (!inst) {
+        // Sin instancia no hay nada que reparar: lo que hace falta es crearla,
+        // y de eso ya se encarga la otra accion.
+        QMessageBox::information(this, BuildConfig.LAUNCHER_DISPLAYNAME,
+                                 tr("Todavia no hay nada instalado. Pulsa «%1» para instalarlo.")
+                                     .arg(m_accionActualizarLuna->text()));
+        return;
+    }
+
+    // ⚠ SE AVISA DE QUE TARDA, y no es cortesia: `Mode::Repair` calcula el sha1
+    //   de CADA fichero del pack --159, y algunos de decenas de MB--. Sin el
+    //   aviso, la barra parece colgada y el jugador cierra el launcher a medias.
+    const auto respuesta = QMessageBox::question(
+        this, tr("Reparar la instalacion"),
+        tr("Se va a comprobar fichero a fichero y volver a bajar lo que no cuadre.\n\n"
+           "Tarda bastante mas que una actualizacion normal, pero es lo unico que detecta un fichero que se "
+           "estropeo DESPUES de instalarse.\n\n"
+           "Tus mundos, capturas y ajustes no se tocan."),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    if (respuesta != QMessageBox::Yes) {
+        return;
+    }
+
+    unique_qobject_ptr<Task> tarea(new Luna::UpdateTask(inst->gameRoot(), Luna::currentProfile(), Luna::Mode::Repair));
+    runModalTask(tarea.get());
+}
+
+void MainWindow::onJuegoTerminadoConProblema(QString titulo, QString detalle, int accion)
+{
+    // ⚠ NO ES UN `critical`. Un icono de error rojo para "actualiza el
+    //   controlador de la grafica" asusta mas de lo que informa, y la mitad de
+    //   estos casos los arregla el propio launcher pulsando un boton.
+    QMessageBox aviso(QMessageBox::Warning, titulo, detalle, QMessageBox::NoButton, this);
+
+    QPushButton* botonAccion = nullptr;
+    switch (static_cast<Luna::Accion>(accion)) {
+        case Luna::Accion::Reparar:
+            botonAccion = aviso.addButton(tr("Reparar"), QMessageBox::AcceptRole);
+            break;
+        case Luna::Accion::Memoria:
+            botonAccion = aviso.addButton(tr("Abrir Ajustes"), QMessageBox::AcceptRole);
+            break;
+        case Luna::Accion::Ninguna:
+            break;
+    }
+
+    // El registro se ofrece SIEMPRE, tambien cuando sabemos la causa: es lo que
+    // hay que mandar por Discord si el arreglo no funciona.
+    auto* botonRegistro = aviso.addButton(tr("Abrir la carpeta de registros"), QMessageBox::HelpRole);
+    auto* botonCerrar = aviso.addButton(QMessageBox::Close);
+    aviso.setDefaultButton(botonAccion ? botonAccion : botonCerrar);
+    aviso.exec();
+
+    auto* pulsado = aviso.clickedButton();
+    if (pulsado == botonRegistro) {
+        if (auto* inst = Luna::findInstance(APPLICATION->instances())) {
+            DesktopServices::openPath(FS::PathCombine(inst->gameRoot(), "logs"), true);
+        }
+        return;
+    }
+    if (pulsado && pulsado == botonAccion) {
+        if (static_cast<Luna::Accion>(accion) == Luna::Accion::Reparar) {
+            repararInstalacion();
+        } else {
+            APPLICATION->ShowGlobalSettings(this, "java-settings");
+        }
+    }
 }
 
 void MainWindow::runModalTask(Task* task)

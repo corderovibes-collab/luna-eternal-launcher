@@ -172,6 +172,10 @@ void LauncherPartLaunch::on_state(LoggedProcess::State state)
         case LoggedProcess::Aborted:
         case LoggedProcess::Crashed: {
             m_parent->setPid(-1);
+            // ⚠ Se guarda para el diagnostico. Un cierre de golpe de Windows
+            //   --0xC0000005, 0xC0000409-- no deja NI UNA LINEA en el log, asi
+            //   que el codigo es lo unico que hay para explicarlo.
+            m_parent->setExitCode(m_process.exitCode());
             m_parent->instance()->setMinecraftRunning(false);
             emitFailed(tr("Game crashed."));
             return;
@@ -185,6 +189,7 @@ void LauncherPartLaunch::on_state(LoggedProcess::State state)
             m_parent->instance()->setMinecraftRunning(false);
             // if the exit code wasn't 0, report this as a crash
             auto exitCode = m_process.exitCode();
+            m_parent->setExitCode(exitCode);
             if (exitCode != 0) {
                 emitFailed(tr("Game crashed."));
                 return;

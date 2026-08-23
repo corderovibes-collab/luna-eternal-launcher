@@ -62,6 +62,7 @@
 #include <QMessageBox>
 #include "luna/LunaConfig.h"
 #include "luna/LunaUpdate.h"
+#include "luna/LunaDiagnostico.h"
 #include "ui/instanceview/AccessibleInstanceView.h"
 
 #include "ui/pages/BasePageProvider.h"
@@ -1788,6 +1789,30 @@ void Application::controllerFinished()
     auto& extras = m_instanceExtras.at(id);
 
     const bool wasSuccessful = controller->wasSuccessful();
+
+    // ⚠⚠ EL DIAGNOSTICO VA AQUI, Y ANTES DE SOLTAR EL CONTROLADOR.
+    //
+    //    Cuando Minecraft se cae, lo que ve el jugador es una ventana que
+    //    desaparece. Sin esto se queda sin saber si fue su grafica, su memoria,
+    //    un fichero corrupto o algo que el launcher puede arreglar solo -- y la
+    //    causa esta escrita, en un log que no va a abrir.
+    //
+    //    `Luna::diagnosticar` decide; aqui solo se recoge lo que necesita. Ojo
+    //    al ORDEN: `extras.controller.reset()` esta unas lineas mas abajo y se
+    //    lleva por delante la tarea de la que sale el codigo de salida.
+    if (!wasSuccessful) {
+        if (auto* inst = controller->instance()) {
+            int codigo = 0;
+            if (auto* tarea = inst->getLaunchTask()) {
+                codigo = tarea->exitCode();
+            }
+            const auto d = Luna::diagnosticar(codigo, Luna::colaDelRegistro(inst->gameRoot()));
+            if (!d.vacio()) {
+                emit juegoTerminadoConProblema(d.titulo, d.detalle, static_cast<int>(d.accion));
+            }
+        }
+    }
+
     // on success, do...
     if (wasSuccessful && controller->instance()->settings()->get("AutoCloseConsole").toBool()) {
         if (extras.window) {

@@ -208,6 +208,20 @@ class Application : public QApplication {
     QUrl normalizeImportUrl(const QString& url);
 
    signals:
+    /**
+     * El juego se cerro mal y sabemos algo que contarle al jugador.
+     *
+     * ⚠ VA POR SEÑAL Y NO SE ENSEÑA AQUI a proposito: `Application` no tiene
+     *   ventana a la que colgar un dialogo, y el boton que a veces hace falta
+     *   --Reparar-- vive en `MainWindow`. Aqui solo se sabe QUE paso; que hacer
+     *   con ello es cosa de la interfaz.
+     *
+     * `accion` es un `Luna::Accion` en int: viaja por una conexion que puede
+     * ser en cola, y un enum sin registrar en el sistema de metatipos se
+     * perderia por el camino sin dar ningun error.
+     */
+    void juegoTerminadoConProblema(QString titulo, QString detalle, int accion);
+
     void updateAllowedChanged(bool status);
     void globalSettingsAboutToOpen();
     void globalSettingsApplied();
