@@ -4,5 +4,10 @@
         <file>pokereport.qss</file>
         <file>letras.png</file>
         <file alias="letras@2x.png">letras@2x.png</file>
+        <!-- El heroe de la pantalla principal. Van al DOBLE de tamaño y se
+             escalan hacia abajo con setDevicePixelRatio(2): a 150 % de escala
+             de Windows, un PNG guardado al tamaño exacto se ve pastoso. -->
+        <file alias="ball@2x.png">ball@2x.png</file>
+        <file alias="letras_grande@2x.png">letras_grande@2x.png</file>
     </qresource>
 </RCC>

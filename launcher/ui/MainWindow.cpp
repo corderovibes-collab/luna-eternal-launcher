@@ -121,6 +121,7 @@
 #include "ui/instanceview/InstanceProxyModel.h"
 #include "ui/instanceview/InstanceView.h"
 #include "ui/themes/ITheme.h"
+#include "ui/pokereport/PantallaPrincipal.h"
 #include "ui/themes/PokeReportTheme.h"
 #include "ui/themes/ThemeManager.h"
 #include "ui/widgets/LabeledToolButton.h"
@@ -455,6 +456,93 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(view, &InstanceView::groupStateChanged, APPLICATION->instances(), &InstanceList::on_GroupStateChanged);
         ui->horizontalLayout->addWidget(view);
     }
+
+    // -------------------------------------------------- LA PANTALLA DEL JUGADOR
+    //
+    // ⚠⚠ SUSTITUYE A LA REJILLA DE INSTANCIAS, NO LA BORRA.
+    //
+    //    `view` sigue creado, con su modelo y sus conexiones: todo lo que
+    //    depende de el --la seleccion, el menu contextual, las acciones-- sigue
+    //    funcionando igual. Solo esta OCULTO. Borrarlo obligaria a desenredar
+    //    medio MainWindow y a mantener ese desenredo en cada merge con upstream.
+    //
+    // ⚠ Y la pantalla nueva NO DECIDE NADA: emite dos señales y el trabajo lo
+    //   hace lo que ya estaba (`lanzarPoniendoAlDia`, `onCambiarPerfilLuna`).
+    {
+        m_pantalla = new PantallaPrincipal(ui->centralWidget);
+        ui->horizontalLayout->addWidget(m_pantalla);
+        view->setVisible(false);
+
+        // ⚠ El fondo de la ball lo dibuja `InstanceView`, que ahora esta
+        //   oculto. La pantalla nueva trae el logo delante, asi que el fondo
+        //   sobraria: dos veces el mismo dibujo, uno encima del otro.
+
+        connect(m_pantalla, &PantallaPrincipal::jugarPulsado, this, [this] {
+            auto* inst = Luna::findInstance(APPLICATION->instances());
+            if (!inst) {
+                // Todavia no hay instancia: instalarla ES lo que hace falta, y
+                // de eso ya se encarga la accion de actualizar el pack.
+                onActualizarPackLuna();
+                return;
+            }
+            lanzarPoniendoAlDia(inst);
+        });
+
+        connect(m_pantalla, &PantallaPrincipal::perfilElegido, this, [this](bool constructor) {
+            if (constructor == Luna::isBuilder(Luna::currentProfile())) {
+                return;  // ya estaba: no se reinstalan 46 MB por un clic de mas
+            }
+            // Se hace por la accion y no llamando al metodo, para que el
+            // interruptor del menu quede marcado igual. Un estado en dos sitios
+            // que no se hablan es como acaban diciendo cosas distintas.
+            m_accionPerfilConstructor->setChecked(constructor);
+        });
+
+        m_pantalla->ponerPerfil(Luna::isBuilder(Luna::currentProfile()));
+
+        // ⚠⚠ LAS DOS BARRAS DE LA DERECHA SE OCULTAN AQUI, Y EL SITIO IMPORTA.
+        //
+        //    `instanceToolBar` es un `WideBar` y RESTAURA SU PROPIA VISIBILIDAD
+        //    desde los ajustes del jugador (`setVisibilityState`, mucho mas
+        //    arriba en este mismo constructor). Ocultarla antes de eso no sirve
+        //    de nada: se vuelve a enseñar sola y parece que la linea no existe.
+        //
+        //    Lo que ofrecen ya no lleva a ningun sitio util: «Lanzar» es el
+        //    boton grande de al lado, y Editar y Carpeta siguen alcanzables
+        //    desde el menu. El panel de noticias es el de Prism.
+        ui->instanceToolBar->setVisible(false);
+        ui->newsToolBar->setVisible(false);
+
+        // ------------------------------------------- la tarjeta del servidor
+        //
+        // ⚠⚠ «Comprobando…» TIENE QUE RESOLVERSE. Un estado que se queda ahi
+        //    para siempre es peor que no enseñar nada: el jugador no sabe si el
+        //    servidor esta caido o si el launcher se ha colgado.
+        //
+        // El manifiesto trae la direccion, la version y la lista de ficheros,
+        // asi que una sola peticion llena la tarjeta entera.
+        auto* traer = new Luna::FetchManifestTask(this);
+        connect(traer, &Task::succeeded, this, [this, traer] {
+            const auto& m = traer->manifest();
+            if (!m.isValid()) {
+                m_pantalla->ponerEstado(PantallaPrincipal::Estado::SinConexion);
+                return;
+            }
+            m_pantalla->ponerPack(tr("Pack %1 · %2 ficheros").arg(m.packVersion).arg(m.files.size()));
+            comprobarServidor(m.serverHost, m.serverPort);
+        });
+        connect(traer, &Task::failed, this, [this](QString) {
+            // ⚠ Si no se puede ni traer el manifiesto, lo que esta caido es la
+            //   conexion del jugador o nuestro CDN -- no el servidor. Se dice
+            //   «sin conexion» y no «servidor caido», que seria una acusacion
+            //   sin pruebas.
+            m_pantalla->ponerEstado(PantallaPrincipal::Estado::SinConexion);
+        });
+        // ⚠ NO es `runModalTask`: esto pasa al arrancar y no debe bloquear la
+        //   ventana. Si falla, se enseña en la tarjeta y ya.
+        traer->start();
+    }
+
     // The cat background
     {
         // set the cat action priority here so you can still see the action in qt designer
@@ -499,8 +587,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     // When the global settings page closes, we want to know about it and update our state
     connect(APPLICATION, &Application::globalSettingsApplied, this, &MainWindow::globalSettingsClosed);
 
-    m_statusLeft = new QLabel(tr("No instance selected"), this);
-    m_statusCenter = new QLabel(tr("Total playtime: 0s"), this);
+    // ⚠ EL PIE NO HABLA DE INSTANCIAS. Aqui solo hay una y el jugador no sabe
+    //   ni que existe la palabra: «No instance selected» no le dice nada.
+    //
+    // ⚠⚠ Y ESTO VA AQUI Y NO ARRIBA CON LA PANTALLA NUEVA, aunque sea del mismo
+    //    cambio. Se puso alli y el launcher MORIA al arrancar sin llegar a
+    //    dibujar nada: `m_statusLeft` se crea en esta linea, asi que tocarlo
+    //    antes es escribir sobre un puntero nulo. El log terminaba en
+    //    «applying catpack» y no decia una palabra del motivo.
+    m_statusLeft = new QLabel(tr("Listo para jugar"), this);
+    m_statusCenter = new QLabel(BuildConfig.LAUNCHER_DISPLAYNAME + " " + BuildConfig.versionString(), this);
     statusBar()->addPermanentWidget(m_statusLeft, 1);
     statusBar()->addPermanentWidget(m_statusCenter, 0);
 
@@ -629,7 +725,10 @@ void MainWindow::retranslateUi()
     if (m_selectedInstance) {
         m_statusLeft->setText(m_selectedInstance->getStatusbarDescription());
     } else {
-        m_statusLeft->setText(tr("No instance selected"));
+        // ⚠ Mismo texto que en `selectionBad()`, y hay que cambiarlo EN LOS DOS.
+        //   Este se ejecuta al cambiar de idioma y al arrancar, asi que dejarlo
+        //   con el de Prism deshacia el otro sin que se notara donde.
+        m_statusLeft->setText(tr("Listo para jugar"));
     }
 
     ui->retranslateUi(this);
@@ -2193,11 +2292,58 @@ void MainWindow::instanceDataChanged(const QModelIndex& topLeft, const QModelInd
     }
 }
 
+void MainWindow::comprobarServidor(const QString& host, int puerto)
+{
+    if (host.isEmpty()) {
+        m_pantalla->ponerEstado(PantallaPrincipal::Estado::SinConexion);
+        return;
+    }
+
+    // ⚠⚠ ESTO NO ES UN «PING» DE MINECRAFT, Y NO SE VENDE COMO TAL.
+    //
+    //    El ping del listado de servidores devuelve nombre, versión y cuánta
+    //    gente hay dentro, pero exige hablar su protocolo: handshake con
+    //    varints, petición de estado y un JSON de vuelta. Aquí solo se abre una
+    //    conexión TCP: si el puerto acepta, hay algo escuchando.
+    //
+    //    Es menos información, pero es información VERDADERA. Enseñar «12
+    //    jugadores» inventado sería peor que no enseñar nada, y responde la
+    //    pregunta que importa antes de pulsar JUGAR: ¿está arriba?
+    auto* sock = new QTcpSocket(this);
+
+    // ⚠ HACE FALTA UN RELOJ. Un puerto filtrado por un cortafuegos no rechaza:
+    //   se queda callado, y `QTcpSocket` esperaría el tiempo del sistema —que
+    //   en Windows son ~20 segundos. La tarjeta se quedaría en «Comprobando…»
+    //   todo ese rato, que es justo lo que esto viene a evitar.
+    auto* reloj = new QTimer(this);
+    reloj->setSingleShot(true);
+    reloj->setInterval(4000);
+
+    auto terminar = [this, sock, reloj](PantallaPrincipal::Estado estado) {
+        reloj->stop();
+        sock->disconnect();  // que no vuelva a entrar por otra señal
+        sock->abort();
+        sock->deleteLater();
+        reloj->deleteLater();
+        m_pantalla->ponerEstado(estado);
+    };
+
+    connect(sock, &QTcpSocket::connected, this, [terminar] { terminar(PantallaPrincipal::Estado::EnLinea); });
+    connect(sock, &QTcpSocket::errorOccurred, this,
+            [terminar](QAbstractSocket::SocketError) { terminar(PantallaPrincipal::Estado::SinConexion); });
+    connect(reloj, &QTimer::timeout, this, [terminar] { terminar(PantallaPrincipal::Estado::SinConexion); });
+
+    reloj->start();
+    sock->connectToHost(host, static_cast<quint16>(puerto));
+}
+
 void MainWindow::selectionBad()
 {
     // start by reseting everything...
     m_selectedInstance = nullptr;
-    m_statusLeft->setText(tr("No instance selected"));
+    // ⚠ El jugador no sabe que existe la palabra «instancia», y aqui solo hay
+    //   una. «No instance selected» no le dice nada que pueda usar.
+    m_statusLeft->setText(tr("Listo para jugar"));
 
     statusBar()->clearMessage();
     ui->instanceToolBar->setEnabled(false);

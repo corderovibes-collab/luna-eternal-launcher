@@ -598,3 +598,126 @@ QStatusBar::item {
 QSplitter::handle {
     background: #383236;
 }
+
+/* ------------------------------------------------- pantalla principal --- */
+/*
+ * La que sustituye a la rejilla de instancias de Prism: perfiles a la
+ * izquierda, logo y JUGAR.
+ *
+ * ⚠ Los nombres de objeto los pone PantallaPrincipal.cpp. Si alli cambia uno,
+ *   aqui deja de aplicarse el estilo Y NO FALLA NADA -- simplemente ese trozo
+ *   se dibuja con el estilo por defecto.
+ */
+
+QWidget#lateralPerfiles {
+    background-color: #120F11;
+    border-right: 1px solid #383236;
+    border-radius: 0;
+}
+
+QLabel#tituloLateral {
+    color: #6B6469;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+    padding: 4px 10px 4px 10px;
+    background: transparent;
+}
+
+QWidget#filaPerfil {
+    background-color: transparent;
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+}
+
+QWidget#filaPerfil:hover {
+    background-color: #211D20;
+}
+
+/* ⚠ El elegido va en MAGENTA, no en oro. El oro dice "esto se pulsa" y el
+ *   magenta "esto es lo que tienes elegido": con el mismo color, pasar el raton
+ *   por la lista pareceria que cambia el perfil. */
+QWidget#filaPerfil[elegido="true"] {
+    background-color: #2A1424;
+    border-left: 3px solid #E8189B;
+}
+
+QLabel#tituloPerfil {
+    color: #F3EEEA;
+    font-size: 13px;
+    font-weight: 600;
+    background: transparent;
+}
+
+QWidget#filaPerfil[elegido="true"] QLabel#tituloPerfil {
+    color: #FFFFFF;
+}
+
+QLabel#detallePerfil {
+    color: #A79FA4;
+    font-size: 10px;
+    background: transparent;
+}
+
+QWidget#filaPerfil[elegido="true"] QLabel#detallePerfil {
+    color: #FF7FC6;
+}
+
+QWidget#filaPerfil[elegido="true"] QLabel#iconoPerfil {
+    color: #FF4FB4;
+}
+
+QWidget#tarjetaServidor {
+    background-color: #171416;
+    border: 1px solid #2B262A;
+    border-radius: 8px;
+}
+
+QLabel#estadoServidor {
+    color: #F3EEEA;
+    font-size: 12px;
+    background: transparent;
+}
+
+QLabel#packServidor {
+    color: #6B6469;
+    font-size: 11px;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    background: transparent;
+}
+
+QWidget#heroe {
+    background-color: #0F0C0E;
+    border-radius: 0;
+}
+
+/* ⚠ El UNICO degradado de toda la interfaz que no es un boton por defecto de
+ *   dialogo. Es la accion de la pantalla: si algun dia hay dos cosas doradas
+ *   aqui, esta deja de leerse como "lo que hay que pulsar". */
+QPushButton#botonJugar {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                      stop: 0 #FFD84A, stop: 1 #F89400);
+    border: 1px solid #F86800;
+    border-radius: 8px;
+    color: #3A1A00;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 0 40px;
+}
+
+QPushButton#botonJugar:hover {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                      stop: 0 #FFE870, stop: 1 #FFA51F);
+}
+
+QPushButton#botonJugar:pressed {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                      stop: 0 #E0A800, stop: 1 #D25800);
+}
+
+QPushButton#botonJugar:disabled {
+    background-color: #2B2520;
+    border: 1px solid #2B2520;
+    color: #6B5C48;
+}

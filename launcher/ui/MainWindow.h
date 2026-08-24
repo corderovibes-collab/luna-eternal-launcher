@@ -44,6 +44,7 @@
 
 #include <QMainWindow>
 #include <QProcess>
+#include <QTcpSocket>
 #include <QTimer>
 
 #include "BaseInstance.h"
@@ -119,6 +120,9 @@ class MainWindow : public QMainWindow {
      *   no se fia de nada: recalcula el sha1 de todo lo que hay en disco.
      */
     void repararInstalacion();
+
+    /** ¿Responde el servidor? Llena la tarjeta de la pantalla principal. */
+    void comprobarServidor(const QString& host, int puerto);
 
     /**
      * Cuenta por que se cerro el juego, y ofrece el boton que lo arregla.
@@ -306,6 +310,7 @@ class MainWindow : public QMainWindow {
     QAction* m_accionActualizarLuna = nullptr;
     QAction* m_accionPerfilConstructor = nullptr;
     QAction* m_accionRepararLuna = nullptr;
+    class PantallaPrincipal* m_pantalla = nullptr;
     QString m_currentInstIcon;
 
     // managed by the application object

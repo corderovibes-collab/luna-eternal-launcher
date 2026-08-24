@@ -940,6 +940,8 @@ SET(LAUNCHER_SOURCES
     ui/themes/FusionTheme.h
     ui/themes/FreesmTheme.cpp
     ui/themes/FreesmTheme.h
+    ui/pokereport/PantallaPrincipal.cpp
+    ui/pokereport/PantallaPrincipal.h
     ui/themes/PokeReportTheme.cpp
     ui/themes/PokeReportTheme.h
     ui/themes/GruvboxTheme.cpp
