@@ -51,6 +51,7 @@ QString pointerUrl();
 QString fallbackManifestUrl();
 
 /** Perfiles posibles. El de constructor añade Axiom y WorldEdit CUI. */
+bool staffToolsEnabled();
 QString defaultProfile();
 QStringList profiles();
 

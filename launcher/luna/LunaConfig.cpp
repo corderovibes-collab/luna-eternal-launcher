@@ -49,9 +49,15 @@ QString defaultProfile()
     return QStringLiteral("jugador");
 }
 
+bool staffToolsEnabled()
+{
+    // Staff shortcut opt-in only; server permissions remain authoritative.
+    return qEnvironmentVariable("POKEREPORT_STAFF_TOOLS") == QStringLiteral("1");
+}
 QStringList profiles()
 {
-    return { QStringLiteral("jugador"), QStringLiteral("constructor") };
+    if(staffToolsEnabled())return {QStringLiteral("jugador"),QStringLiteral("constructor")};
+    return {QStringLiteral("jugador")};
 }
 
 namespace {

@@ -245,6 +245,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(m_accionPerfilConstructor, &QAction::toggled, this, &MainWindow::onCambiarPerfilLuna);
         ui->fileMenu->addAction(m_accionPerfilConstructor);
         ui->mainToolBar->addAction(m_accionPerfilConstructor);
+        m_accionPerfilConstructor->setVisible(Luna::staffToolsEnabled());
 
         // ⚠ REPARAR NO ES "ACTUALIZAR OTRA VEZ", y por eso es una accion aparte.
         //

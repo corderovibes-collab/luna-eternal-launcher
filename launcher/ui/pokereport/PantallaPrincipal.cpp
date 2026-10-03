@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "ui/pokereport/PantallaPrincipal.h"
+#include "luna/LunaConfig.h"
 
 #include <QLabel>
 #include <QMouseEvent>
@@ -130,6 +131,7 @@ PantallaPrincipal::PantallaPrincipal(QWidget* parent) : QWidget(parent)
     m_filaConstructor = filaPerfil(tr("Constructor"), tr("Con Axiom"), true);
     col->addWidget(m_filaJugador);
     col->addWidget(m_filaConstructor);
+    m_filaConstructor->setVisible(Luna::staffToolsEnabled());
     col->addStretch(1);
 
     // La tarjeta del servidor, abajo del todo.

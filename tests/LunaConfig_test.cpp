@@ -54,8 +54,15 @@ class LunaConfigTest : public QObject {
     {
         QCOMPARE(Luna::defaultProfile(), QStringLiteral("jugador"));
         QVERIFY(Luna::profiles().contains(Luna::defaultProfile()));
+        const bool had=qEnvironmentVariableIsSet("POKEREPORT_STAFF_TOOLS");
+        const QByteArray previous=qgetenv("POKEREPORT_STAFF_TOOLS");
+        qunsetenv("POKEREPORT_STAFF_TOOLS");
+        QVERIFY(!Luna::profiles().contains(QStringLiteral("constructor")));
+        QCOMPARE(Luna::profiles().size(),1);
+        qputenv("POKEREPORT_STAFF_TOOLS","1");
         QVERIFY(Luna::profiles().contains(QStringLiteral("constructor")));
-        QCOMPARE(Luna::profiles().size(), 2);
+        QCOMPARE(Luna::profiles().size(),2);
+        if(had)qputenv("POKEREPORT_STAFF_TOOLS",previous);else qunsetenv("POKEREPORT_STAFF_TOOLS");
     }
 };
 
