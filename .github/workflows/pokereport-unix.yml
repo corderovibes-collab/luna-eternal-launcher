@@ -1,6 +1,11 @@
 name: PokeReport Linux and macOS
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        type: choice
+        default: all
+        options: [all, linux]
 permissions:
   contents: read
 jobs:
@@ -8,16 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-24.04
-            platform: linux-x64
-            arch: x86_64
-          - os: macos-15-intel
-            platform: macos-x64
-            arch: x86_64
-          - os: macos-15
-            platform: macos-arm64
-            arch: arm64
+        include: ${{ fromJSON(inputs.target == 'linux' && '[{"os":"ubuntu-24.04","platform":"linux-x64","arch":"x86_64"}]' || '[{"os":"ubuntu-24.04","platform":"linux-x64","arch":"x86_64"},{"os":"macos-15-intel","platform":"macos-x64","arch":"x86_64"},{"os":"macos-15","platform":"macos-arm64","arch":"arm64"}]') }}
     runs-on: ${{ matrix.os }}
     env:
       QT_QPA_PLATFORM: offscreen
@@ -34,7 +30,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build extra-cmake-modules scdoc libarchive-dev libcmark-dev libqrencode-dev libtomlplusplus-dev gamemode-dev libgl1-mesa-dev libxcb-cursor-dev libxkbcommon-dev libfuse2
+          sudo apt-get install -y ninja-build extra-cmake-modules scdoc libarchive-dev libcmark-dev cmark libqrencode-dev libtomlplusplus-dev gamemode-dev libgl1-mesa-dev libxcb-cursor-dev libxkbcommon-dev libfuse2
       - name: macOS dependencies
         if: runner.os == 'macOS'
         run: |
