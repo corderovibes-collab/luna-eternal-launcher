@@ -37,7 +37,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build extra-cmake-modules scdoc libarchive-dev libcmark-dev libqrencode-dev libtomlplusplus-dev libgamemode-dev libgl1-mesa-dev libxcb-cursor-dev libxkbcommon-dev libfuse2
+          sudo apt-get install -y ninja-build extra-cmake-modules scdoc libarchive-dev libcmark-dev libqrencode-dev libtomlplusplus-dev gamemode-dev libgl1-mesa-dev libxcb-cursor-dev libxkbcommon-dev libfuse2
       - name: macOS dependencies
         if: runner.os == 'macOS'
         run: |
