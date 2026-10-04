@@ -100,6 +100,7 @@ jobs:
           QT_QPA_PLATFORM=offscreen squashfs-root/AppRun --version
           mkdir -p dist
           mv "$OUTPUT" dist/
+          if [ -f "$OUTPUT.zsync" ]; then mv "$OUTPUT.zsync" dist/; fi
       - name: macOS bundle
         if: runner.os == 'macOS'
         shell: bash

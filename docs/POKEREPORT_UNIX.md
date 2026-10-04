@@ -19,3 +19,5 @@ Solo paquetes de Jugador se publican como descargas públicas. Staff se entrega 
 ## Validación
 
 CI ejecuta compilación, CTest, empaquetado y --version del binario distribuido. SHA256SUMS acompaña los paquetes. FFmpeg oficial instalado incluye archivos Linux, macOS y ARM64; no se distribuyen DLL de Windows como solución para estos sistemas. Audio real, vídeos, mods de construcción, login y rendimiento de Minecraft requieren QA en equipos reales; una compilación no certifica esas pruebas.
+
+Builds verificados: macOS run 37175712451 (Intel y ARM64), Linux run 37176410162; 29 suites PASS por plataforma y --version del paquete PASS. Descargas de Jugador publicadas en https://pokereport.online/jugar/. Staff permanece privado.
