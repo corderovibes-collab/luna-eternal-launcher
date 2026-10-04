@@ -1,8 +1,5 @@
 name: PokeReport Linux and macOS
 on:
-  push:
-    branches: [codex/preopen-player-ui]
-    paths: ['.github/workflows/pokereport-unix.yml', 'scripts/package-unix.py']
   workflow_dispatch:
 permissions:
   contents: read
@@ -74,7 +71,7 @@ jobs:
             chmod +x "$name-x86_64.AppImage"
           done
           export QMAKE="$QT_ROOT_DIR/bin/qmake"
-          export OUTPUT="PokeReport-Launcher-0.2.4-linux-x64.AppImage"
+          export OUTPUT="luna-launcher-linux-x64-0.2.4.AppImage"
           export NO_APPSTREAM=1
           ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage -i AppDir/usr/share/icons/hicolor/scalable/apps/net.pokereport.LunaEternal.svg
           chmod +x "$OUTPUT"

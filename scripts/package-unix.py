@@ -4,7 +4,7 @@ platform = sys.argv[1]
 assert platform in {"linux-x64", "macos-x64", "macos-arm64"}
 dist = pathlib.Path("dist")
 if platform == "linux-x64":
-    body = '#!/bin/sh\nset -eu\nbase=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexport POKEREPORT_STAFF_TOOLS=1\nexec "$base/PokeReport-Launcher-0.2.4-linux-x64.AppImage" "$@"\n'
+    body = '#!/bin/sh\nset -eu\nbase=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexport POKEREPORT_STAFF_TOOLS=1\nexec "$base/luna-launcher-linux-x64-0.2.4.AppImage" "$@"\n'
     filename = "PokeReport-Staff.sh"
 else:
     body = '#!/bin/sh\nset -eu\nbase=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\napp="$base/LunaEternal.app"\nif [ ! -d "$app" ]; then app="/Applications/LunaEternal.app"; fi\nexport POKEREPORT_STAFF_TOOLS=1\nexec "$app/Contents/MacOS/lunaeternal" "$@"\n'
@@ -14,6 +14,16 @@ with zipfile.ZipFile(dist / f"PokeReport-Staff-0.2.4-{platform}.zip", "w", zipfi
     entry.create_system = 3
     entry.external_attr = 0o100755 << 16
     archive.writestr(entry, body)
+    if platform == "linux-x64":
+        binary = dist / "luna-launcher-linux-x64-0.2.4.AppImage"
+        info = zipfile.ZipInfo(binary.name)
+        info.create_system = 3
+        info.external_attr = 0o100755 << 16
+        archive.writestr(info, binary.read_bytes())
+    else:
+        with zipfile.ZipFile(dist / f"PokeReport-Launcher-0.2.4-{platform}.zip") as normal:
+            for info in normal.infolist():
+                archive.writestr(info, normal.read(info))
     archive.writestr("LEEME.txt", "Acceso Staff privado. Extrae este acceso junto al launcher normal. En Mac también puede usar /Applications/LunaEternal.app. El rol de servidor se asigna por separado.\n")
 lines = []
 for path in sorted(dist.iterdir()):
