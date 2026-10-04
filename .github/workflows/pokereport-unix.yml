@@ -1,0 +1,100 @@
+name: PokeReport Linux and macOS
+on:
+  push:
+    branches: [codex/preopen-player-ui]
+    paths: ['.github/workflows/pokereport-unix.yml', 'scripts/package-unix.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux-x64
+            arch: x86_64
+          - os: macos-15-intel
+            platform: macos-x64
+            arch: x86_64
+          - os: macos-15
+            platform: macos-arm64
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    env:
+      QT_QPA_PLATFORM: offscreen
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build extra-cmake-modules scdoc libarchive-dev libcmark-dev libqrencode-dev libtomlplusplus-dev libgamemode-dev libgl1-mesa-dev libxcb-cursor-dev libxkbcommon-dev libfuse2
+      - name: macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install ninja extra-cmake-modules libarchive cmark qrencode tomlplusplus pkg-config
+          echo "CMAKE_PREFIX_PATH=$(brew --prefix libarchive):$(brew --prefix)" >> "$GITHUB_ENV"
+          echo "PKG_CONFIG_PATH=$(brew --prefix libarchive)/lib/pkgconfig" >> "$GITHUB_ENV"
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.10.2'
+          modules: qtimageformats qtnetworkauth
+          cache: true
+      - name: Configure
+        shell: bash
+        run: |
+          args=()
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            args+=("-DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}" "-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0" "-DCMAKE_PREFIX_PATH=$QT_ROOT_DIR;$CMAKE_PREFIX_PATH")
+          fi
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_LTO=OFF -DLauncher_QT_VERSION_MAJOR=6 -DLauncher_ENABLE_JAVA_DOWNLOADER=ON -DLauncher_BUILD_ARTIFACT=luna-launcher-${{ matrix.platform }} "${args[@]}"
+      - name: Build
+        run: cmake --build build --parallel 3
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure -E '^example64|example$'
+      - name: Install
+        run: cmake --install build --prefix "$PWD/install"
+      - name: Linux AppImage
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cmake --install build --prefix "$PWD/AppDir/usr"
+          for tool in linuxdeploy/linuxdeploy linuxdeploy/linuxdeploy-plugin-qt linuxdeploy/linuxdeploy-plugin-appimage; do
+            name="${tool##*/}"
+            curl --fail --location --retry 3 "https://github.com/$tool/releases/download/continuous/$name-x86_64.AppImage" -o "$name-x86_64.AppImage"
+            chmod +x "$name-x86_64.AppImage"
+          done
+          export QMAKE="$QT_ROOT_DIR/bin/qmake"
+          export OUTPUT="PokeReport-Launcher-0.2.4-linux-x64.AppImage"
+          export NO_APPSTREAM=1
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage -i AppDir/usr/share/icons/hicolor/scalable/apps/net.pokereport.LunaEternal.svg
+          chmod +x "$OUTPUT"
+          "$PWD/$OUTPUT" --appimage-extract >/dev/null
+          QT_QPA_PLATFORM=offscreen squashfs-root/AppRun --version
+          mkdir -p dist
+          mv "$OUTPUT" dist/
+      - name: macOS bundle
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          "$QT_ROOT_DIR/bin/macdeployqt" install/LunaEternal.app -always-overwrite
+          codesign --force --deep --sign - install/LunaEternal.app
+          install/LunaEternal.app/Contents/MacOS/lunaeternal --version
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent install/LunaEternal.app dist/PokeReport-Launcher-0.2.4-${{ matrix.platform }}.zip
+      - name: Staff entry and checksums
+        run: python3 scripts/package-unix.py ${{ matrix.platform }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PokeReport-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
